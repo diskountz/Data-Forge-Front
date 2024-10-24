@@ -1,0 +1,96 @@
+/* File: styles/blog.css */
+.blog-content {
+  @apply max-w-none text-gray-800;
+
+  /* Headings */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold text-gray-900 scroll-mt-24;
+  }
+
+  h1 {
+    @apply text-4xl md:text-5xl leading-tight mt-12 mb-8;
+  }
+
+  h2 {
+    @apply text-3xl leading-snug mt-12 mb-6;
+  }
+
+  h3 {
+    @apply text-2xl leading-snug mt-8 mb-4;
+  }
+
+  h4 {
+    @apply text-xl leading-snug mt-6 mb-4;
+  }
+
+  /* Paragraphs and spacing */
+  p {
+    @apply text-lg leading-relaxed mb-6;
+  }
+
+  /* Lists */
+  ul, ol {
+    @apply my-6 ml-6 space-y-2;
+  }
+
+  li {
+    @apply text-lg leading-relaxed;
+  }
+
+  /* Blockquotes */
+  blockquote {
+    @apply pl-6 border-l-4 border-emerald-pool/30 my-8 italic text-gray-700;
+  }
+
+  /* Code blocks */
+  pre {
+    @apply bg-gray-50 rounded-lg p-4 my-6 overflow-x-auto;
+  }
+
+  code {
+    @apply bg-gray-50 px-1.5 py-0.5 rounded text-sm font-mono;
+  }
+
+  /* Links */
+  a {
+    @apply text-emerald-pool hover:text-emerald-pool/80 underline-offset-2 transition-colors;
+  }
+
+  /* Images */
+  img {
+    @apply rounded-lg my-8;
+  }
+
+  /* Tables */
+  table {
+    @apply w-full my-8 border-collapse;
+  }
+
+  th, td {
+    @apply border border-gray-200 px-4 py-2;
+  }
+
+  th {
+    @apply bg-gray-50 font-semibold text-left;
+  }
+
+  /* Horizontal rule */
+  hr {
+    @apply my-12 border-gray-200;
+  }
+}
+
+/* Article layout spacing */
+.article-container {
+  @apply max-w-4xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+/* Article header */
+.article-header {
+  @apply mb-12 text-center;
+}
+
+/* Article meta */
+.article-meta {
+  @apply flex items-center justify-center space-x-4 text-sm text-gray-600;
+}

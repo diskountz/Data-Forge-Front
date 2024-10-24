@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { format } from 'date-fns'
 import Link from 'next/link'
+import MainLayout from '../../components/MainLayout'
+import TableOfContents from '../../components/PostEditor/TableOfContents'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -28,9 +30,9 @@ export default function BlogPost() {
         .from('posts')
         .select(`
           *,
-          profiles:author_id(full_name),
+          profiles:author_id(*),
           posts_categories(
-            categories(name, slug)
+            categories(*)
           )
         `)
         .eq('slug', slug)
@@ -48,55 +50,102 @@ export default function BlogPost() {
   }
 
   if (loading) {
-    return <div className="text-center py-12">Loading...</div>
+    return (
+      <MainLayout>
+        <div className="text-center py-12">Loading...</div>
+      </MainLayout>
+    )
   }
 
   if (!post) {
-    return <div className="text-center py-12">Post not found</div>
+    return (
+      <MainLayout>
+        <div className="text-center py-12">Post not found</div>
+      </MainLayout>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-          <Link href="/blog">
-            <span className="text-emerald-pool hover:text-emerald-pool/80 cursor-pointer">
-              ← Back to Blog
-            </span>
-          </Link>
-        </div>
-      </header>
-      <main className="max-w-4xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <article className="bg-white shadow rounded-lg overflow-hidden">
-          {post.featured_image && (
-            <img 
-              src={post.featured_image} 
-              alt={post.title}
-              className="w-full h-64 object-cover"
-            />
-          )}
-          <div className="p-8">
-            <h1 className="text-3xl font-bold text-gray-900">{post.title}</h1>
-            <div className="mt-2 text-sm text-gray-500">
-              By {post.profiles?.full_name} • {format(new Date(post.published_at || post.created_at), 'MMMM d, yyyy')}
-            </div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {post.posts_categories.map(({ categories }) => (
-                <span
-                  key={categories.slug}
-                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-pool/10 text-emerald-pool"
-                >
-                  {categories.name}
-                </span>
-              ))}
-            </div>
+    <MainLayout>
+      <article className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="lg:grid lg:grid-cols-12 lg:gap-8">
+          {/* Main content */}
+          <div className="lg:col-span-8">
+            {post.featured_image && (
+              <img 
+                src={post.featured_image} 
+                alt={post.title}
+                className="w-full h-64 object-cover rounded-lg mb-8"
+              />
+            )}
+
+            <header className="mb-8">
+              <div className="flex items-center space-x-2 text-sm text-gray-500 mb-4">
+                {post.posts_categories.map(({ categories }) => (
+                  <Link 
+                    key={categories.id} 
+                    href={`/blog/category/${categories.slug}`}
+                  >
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-pool/10 text-emerald-pool cursor-pointer">
+                      {categories.name}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+
+              <h1 className="text-4xl font-bold text-gray-900 mb-4">{post.title}</h1>
+
+              <div className="flex items-center space-x-4">
+                <img
+                  src={post.profiles.avatar_url || '/default-avatar.png'}
+                  alt={post.profiles.full_name}
+                  className="w-12 h-12 rounded-full"
+                />
+                <div>
+                  <p className="text-sm font-medium text-gray-900">
+                    {post.profiles.full_name}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {format(new Date(post.published_at || post.created_at), 'MMMM d, yyyy')}
+                    {post.estimated_read_time && ` · ${post.estimated_read_time} min read`}
+                  </p>
+                </div>
+              </div>
+            </header>
+
             <div 
-              className="mt-8 prose max-w-none"
+              className="prose prose-lg max-w-none"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
           </div>
-        </article>
-      </main>
-    </div>
+
+          {/* Sidebar */}
+          <aside className="hidden lg:block lg:col-span-4">
+            <div className="sticky top-8">
+              <TableOfContents content={post.content} />
+
+              {/* Author Bio */}
+              {post.author_bio && (
+                <div className="bg-gray-50 rounded-lg p-6 mt-8">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">About the Author</h3>
+                  <div className="flex items-center mb-4">
+                    <img
+                      src={post.profiles.avatar_url || '/default-avatar.png'}
+                      alt={post.profiles.full_name}
+                      className="w-16 h-16 rounded-full mr-4"
+                    />
+                    <div>
+                      <h4 className="font-medium text-gray-900">{post.profiles.full_name}</h4>
+                      <p className="text-sm text-gray-500">{post.profiles.title}</p>
+                    </div>
+                  </div>
+                  <p className="text-gray-600">{post.author_bio}</p>
+                </div>
+              )}
+            </div>
+          </aside>
+        </div>
+      </article>
+    </MainLayout>
   )
 }
