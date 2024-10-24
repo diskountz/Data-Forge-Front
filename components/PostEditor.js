@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import { useRouter } from 'next/router'
-import { Alert, AlertDescription } from '../components/ui/alert'
+import { Alert, AlertDescription } from './ui/alert'
 import RichTextEditor from './RichTextEditor'
 import ImageUpload from './ImageUpload'
 
@@ -19,7 +19,15 @@ export default function PostEditor({ postId }) {
     slug: '',
     excerpt: '',
     featured_image: '',
-    status: 'draft'
+    status: 'draft',
+    meta_title: '',
+    meta_description: '',
+    canonical_url: '',
+    og_image: '',
+    social_image: '',
+    author_bio: '',
+    author_image: '',
+    is_featured: false,
   })
 
   useEffect(() => {
@@ -37,19 +45,10 @@ export default function PostEditor({ postId }) {
         .order('name')
 
       if (error) throw error
-      setCategories(data)
-
-      if (postId) {
-        const { data: postCategories, error: postCategoriesError } = await supabase
-          .from('posts_categories')
-          .select('category_id')
-          .eq('post_id', postId)
-
-        if (postCategoriesError) throw postCategoriesError
-        setSelectedCategories(postCategories.map(pc => pc.category_id))
-      }
+      setCategories(data || [])
     } catch (error) {
-      setError(error.message)
+      console.error('Error fetching categories:', error)
+      setError('Failed to load categories')
     }
   }
 
@@ -57,127 +56,85 @@ export default function PostEditor({ postId }) {
     try {
       const { data, error } = await supabase
         .from('posts')
-        .select('*')
+        .select(`
+          *,
+          posts_categories(category_id)
+        `)
         .eq('id', postId)
         .single()
 
       if (error) throw error
 
-      setFormData({
-        title: data.title,
-        slug: data.slug,
-        excerpt: data.excerpt,
-        featured_image: data.featured_image,
-        status: data.status
-      })
-      setContent(data.content)
+      if (data) {
+        setFormData({
+          ...data,
+          meta_title: data.meta_title || data.title,
+          meta_description: data.meta_description || data.excerpt
+        })
+        setContent(data.content || '')
+        setSelectedCategories(data.posts_categories.map(pc => pc.category_id))
+      }
     } catch (error) {
-      setError(error.message)
+      console.error('Error fetching post:', error)
+      setError('Failed to load post')
     }
   }
 
-  function handleChange(e) {
-    const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
+  async function generateUniqueSlug(baseSlug) {
+    try {
+      let slug = baseSlug
+      let counter = 1
+      let isUnique = false
 
-    // Auto-generate slug from title
+      while (!isUnique) {
+        const { data, error } = await supabase
+          .from('posts')
+          .select('slug')
+          .eq('slug', slug)
+          .single()
+
+        if (error && error.code === 'PGRST116') {
+          // No match found, slug is unique
+          isUnique = true
+        } else if (error) {
+          throw error
+        } else {
+          // Slug exists, try next counter
+          slug = `${baseSlug}-${counter}`
+          counter++
+        }
+      }
+
+      return slug
+    } catch (error) {
+      console.error('Error generating slug:', error)
+      return baseSlug // Fallback to base slug
+    }
+  }
+
+  async function handleChange(e) {
+    const { name, value, type, checked } = e.target
+    const newValue = type === 'checkbox' ? checked : value
+
     if (name === 'title' && !postId) {
-      const slug = value
+      // Generate slug from title
+      const baseSlug = value
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '')
-      setFormData(prev => ({ ...prev, slug }))
-    }
-  }
 
-  async function handleSubmit(e) {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
+      const uniqueSlug = await generateUniqueSlug(baseSlug)
 
-    try {
-      const postData = {
-        ...formData,
-        content,
-        author_id: (await supabase.auth.getUser()).data.user.id,
-        updated_at: new Date().toISOString()
-      }
-
-      let postId
-      if (isEditing) {
-        const { data, error } = await supabase
-          .from('posts')
-          .update(postData)
-          .eq('id', editingPostId)
-          .select()
-          .single()
-
-        if (error) throw error
-        postId = editingPostId
-      } else {
-        const { data, error } = await supabase
-          .from('posts')
-          .insert([postData])
-          .select()
-          .single()
-
-        if (error) throw error
-        postId = data.id
-      }
-
-      // Handle categories
-      if (selectedCategories.length > 0) {
-        // First, delete existing categories if editing
-        if (isEditing) {
-          await supabase
-            .from('posts_categories')
-            .delete()
-            .eq('post_id', postId)
-        }
-
-        // Insert new categories
-        const { error: categoriesError } = await supabase
-          .from('posts_categories')
-          .insert(
-            selectedCategories.map(categoryId => ({
-              post_id: postId,
-              category_id: categoryId
-            }))
-          )
-
-        if (categoriesError) throw categoriesError
-      }
-
-      router.push('/admin/posts')
-    } catch (error) {
-      setError(error.message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function updatePostCategories(postId) {
-    // Remove existing categories
-    await supabase
-      .from('posts_categories')
-      .delete()
-      .eq('post_id', postId)
-
-    // Add new categories
-    if (selectedCategories.length > 0) {
-      const categoryData = selectedCategories.map(categoryId => ({
-        post_id: postId,
-        category_id: categoryId
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        slug: uniqueSlug
       }))
-
-      const { error } = await supabase
-        .from('posts_categories')
-        .insert(categoryData)
-
-      if (error) throw error
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: newValue
+      }))
     }
   }
 
@@ -187,12 +144,31 @@ export default function PostEditor({ postId }) {
     setError(null)
 
     try {
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      if (userError) throw new Error('Authentication error')
+      if (!user) throw new Error('No authenticated user found')
+
+      // Prepare post data
       const postData = {
-        ...formData,
-        content,
+        title: formData.title,
+        slug: formData.slug,
+        content: content,
+        excerpt: formData.excerpt,
+        featured_image: formData.featured_image,
+        status: formData.status,
+        meta_title: formData.meta_title,
+        meta_description: formData.meta_description,
+        canonical_url: formData.canonical_url,
+        og_image: formData.og_image,
+        social_image: formData.social_image,
+        author_bio: formData.author_bio,
+        author_image: formData.author_image,
+        is_featured: formData.is_featured,
         updated_at: new Date().toISOString()
       }
 
+      let post
       if (postId) {
         // Update existing post
         const { data, error } = await supabase
@@ -203,34 +179,62 @@ export default function PostEditor({ postId }) {
           .single()
 
         if (error) throw error
-        await updatePostCategories(postId)
+        post = data
       } else {
         // Create new post
         const { data, error } = await supabase
           .from('posts')
           .insert([{
             ...postData,
-            author_id: (await supabase.auth.getUser()).data.user.id
+            author_id: user.id,
+            created_at: new Date().toISOString()
           }])
           .select()
           .single()
 
         if (error) throw error
-        await updatePostCategories(data.id)
+        post = data
       }
 
-      router.push('/admin/posts')
+      // Handle categories
+      if (post) {
+        if (postId) {
+          // Delete existing category relationships
+          await supabase
+            .from('posts_categories')
+            .delete()
+            .eq('post_id', postId)
+        }
+
+        if (selectedCategories.length > 0) {
+          // Insert new category relationships
+          const { error: categoriesError } = await supabase
+            .from('posts_categories')
+            .insert(
+              selectedCategories.map(categoryId => ({
+                post_id: post.id,
+                category_id: categoryId
+              }))
+            )
+
+          if (categoriesError) throw categoriesError
+        }
+
+        // Redirect to posts list
+        router.push('/admin/posts')
+      }
     } catch (error) {
+      console.error('Error saving post:', error)
       setError(error.message)
     } finally {
       setLoading(false)
     }
   }
 
-  function handleImageUpload(url) {
+  function handleImageUpload(field, url) {
     setFormData(prev => ({
       ...prev,
-      featured_image: url
+      [field]: url
     }))
   }
 
@@ -242,131 +246,180 @@ export default function PostEditor({ postId }) {
         </Alert>
       )}
 
-      <div>
-        <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-          Title
-        </label>
-        <input
-          type="text"
-          id="title"
-          name="title"
-          value={formData.title}
-          onChange={handleChange}
-          required
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
-        />
-      </div>
+      <div className="grid grid-cols-3 gap-6">
+        <div className="col-span-2 space-y-6">
+          {/* Main Content */}
+          <div className="space-y-4">
+            <input
+              type="text"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              placeholder="Post Title"
+              className="w-full text-4xl font-bold border-0 border-b border-gray-200 focus:ring-0 focus:border-emerald-pool"
+              required
+            />
 
-      <div>
-        <label htmlFor="slug" className="block text-sm font-medium text-gray-700">
-          Slug
-        </label>
-        <input
-          type="text"
-          id="slug"
-          name="slug"
-          value={formData.slug}
-          onChange={handleChange}
-          required
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Content
-        </label>
-        <div className="mt-1">
-          <RichTextEditor
-            initialContent={content}
-            onChange={setContent}
-          />
-        </div>
-      </div>
-
-      <div>
-        <label htmlFor="excerpt" className="block text-sm font-medium text-gray-700">
-          Excerpt
-        </label>
-        <textarea
-          id="excerpt"
-          name="excerpt"
-          value={formData.excerpt}
-          onChange={handleChange}
-          rows={3}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
-        />
-      </div>
-
-      <ImageUpload onUpload={handleImageUpload} />
-
-      {formData.featured_image && (
-        <div className="mt-2">
-          <img
-            src={formData.featured_image}
-            alt="Featured"
-            className="h-32 w-auto object-cover rounded-md"
-          />
-        </div>
-      )}
-
-      <div>
-        <label htmlFor="status" className="block text-sm font-medium text-gray-700">
-          Status
-        </label>
-        <select
-          id="status"
-          name="status"
-          value={formData.status}
-          onChange={handleChange}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
-        >
-          <option value="draft">Draft</option>
-          <option value="published">Published</option>
-          <option value="archived">Archived</option>
-        </select>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Categories
-        </label>
-        <div className="mt-2 space-y-2">
-          {categories.map(category => (
-            <label key={category.id} className="inline-flex items-center mr-4">
-              <input
-                type="checkbox"
-                checked={selectedCategories.includes(category.id)}
-                onChange={(e) => {
-                  if (e.target.checked) {
-                    setSelectedCategories([...selectedCategories, category.id])
-                  } else {
-                    setSelectedCategories(selectedCategories.filter(id => id !== category.id))
-                  }
-                }}
-                className="rounded border-gray-300 text-emerald-pool focus:ring-emerald-pool"
+            <div className="prose prose-lg max-w-none">
+              <RichTextEditor
+                content={content}
+                onUpdate={setContent}
               />
-              <span className="ml-2">{category.name}</span>
-            </label>
-          ))}
-        </div>
-      </div>
+            </div>
+          </div>
 
-      <div className="flex justify-end space-x-3">
-        <button
-          type="button"
-          onClick={() => router.push('/admin/posts')}
-          className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-pool"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={loading}
-          className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-pool hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-pool"
-        >
-          {loading ? 'Saving...' : postId ? 'Update Post' : 'Create Post'}
-        </button>
+          {/* SEO and Meta */}
+          <div className="bg-white p-6 rounded-lg shadow-sm space-y-4">
+            <h3 className="text-lg font-medium text-gray-900">SEO & Meta</h3>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Meta Title
+                <span className="text-sm text-gray-500 ml-2">
+                  ({formData.meta_title?.length || 0}/60)
+                </span>
+              </label>
+              <input
+                type="text"
+                name="meta_title"
+                value={formData.meta_title || ''}
+                onChange={handleChange}
+                maxLength={60}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Meta Description
+                <span className="text-sm text-gray-500 ml-2">
+                  ({formData.meta_description?.length || 0}/160)
+                </span>
+              </label>
+              <textarea
+                name="meta_description"
+                value={formData.meta_description || ''}
+                onChange={handleChange}
+                maxLength={160}
+                rows={3}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Canonical URL
+              </label>
+              <input
+                type="url"
+                name="canonical_url"
+                value={formData.canonical_url || ''}
+                onChange={handleChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          {/* Sidebar */}
+          <div className="bg-white p-6 rounded-lg shadow-sm space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Slug
+              </label>
+              <input
+                type="text"
+                name="slug"
+                value={formData.slug}
+                onChange={handleChange}
+                required
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Status
+              </label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
+              >
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Categories
+              </label>
+              <div className="mt-2 space-y-2">
+                {categories.map(category => (
+                  <label key={category.id} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={selectedCategories.includes(category.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedCategories([...selectedCategories, category.id])
+                        } else {
+                          setSelectedCategories(selectedCategories.filter(id => id !== category.id))
+                        }
+                      }}
+                      className="rounded border-gray-300 text-emerald-pool focus:ring-emerald-pool"
+                    />
+                    <span className="ml-2">{category.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="is_featured"
+                  checked={formData.is_featured}
+                  onChange={handleChange}
+                  className="rounded border-gray-300 text-emerald-pool focus:ring-emerald-pool"
+                />
+                <span className="ml-2">Featured Post</span>
+              </label>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow-sm space-y-4">
+            <h3 className="text-lg font-medium text-gray-900">Images</h3>
+
+            <ImageUpload
+              currentImage={formData.featured_image}
+              onUpload={(url) => handleImageUpload('featured_image', url)}
+              label="Featured Image"
+            />
+
+            <ImageUpload
+              currentImage={formData.social_image}
+              onUpload={(url) => handleImageUpload('social_image', url)}
+              label="Social Share Image"
+              hint="Recommended: 1200x630px"
+            />
+          </div>
+
+          <div className="flex space-x-4">
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-pool hover:bg-emerald-pool/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-pool disabled:opacity-50"
+            >
+              {loading ? 'Saving...' : postId ? 'Update' : 'Publish'}
+            </button>
+          </div>
+        </div>
       </div>
     </form>
   )

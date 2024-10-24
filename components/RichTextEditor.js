@@ -3,10 +3,6 @@ import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
 import Image from '@tiptap/extension-image'
-import Table from '@tiptap/extension-table'
-import TableRow from '@tiptap/extension-table-row'
-import TableCell from '@tiptap/extension-table-cell'
-import TableHeader from '@tiptap/extension-table-header'
 import CodeBlock from '@tiptap/extension-code-block'
 import { useSupabaseClient } from '@supabase/auth-helpers-react'
 
@@ -112,6 +108,30 @@ const MenuBar = ({ editor, onImageUpload }) => {
       >
         Link
       </button>
+    </div>
+  )
+}
+
+export default function RichTextEditor({ content = '', onUpdate }) {
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Link.configure({
+        openOnClick: false,
+      }),
+      Image,
+      CodeBlock
+    ],
+    content,
+    onUpdate: ({ editor }) => {
+      onUpdate && onUpdate(editor.getHTML())
+    },
+  })
+
+  return (
+    <div className="border rounded-lg overflow-hidden">
+      <MenuBar editor={editor} />
+      <EditorContent editor={editor} className="prose max-w-none p-4" />
     </div>
   )
 }

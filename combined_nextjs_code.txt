@@ -1,4 +1,110 @@
+Directory: cache
+
+File:   config.json
+
+{
+	"telemetry": {
+		"enabled": false
+	}
+}
+----------------------------------------
+
 Directory: components
+
+File:   AdminLayout.js
+
+// File: components/AdminLayout.js
+import { useSupabaseClient, useSession } from '@supabase/auth-helpers-react'
+import { useRouter } from 'next/router'
+import Link from 'next/link'
+import { useEffect } from 'react'
+
+export default function AdminLayout({ children }) {
+  const session = useSession()
+  const supabase = useSupabaseClient()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!session) {
+      router.push('/auth/signin')
+    }
+  }, [session])
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    router.push('/auth/signin')
+  }
+
+  if (!session) return null
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+      {/* Top Navigation */}
+      <nav className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex">
+              <div className="flex-shrink-0 flex items-center">
+                <Link href="/admin">
+                  <span className="text-2xl font-bold text-emerald-pool cursor-pointer">
+                    Data Forge CMS
+                  </span>
+                </Link>
+              </div>
+              <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+                <Link href="/admin">
+                  <span className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                    router.pathname === '/admin' 
+                      ? 'border-emerald-pool text-gray-900' 
+                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                  } cursor-pointer`}>
+                    Dashboard
+                  </span>
+                </Link>
+                <Link href="/admin/posts">
+                  <span className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                    router.pathname.startsWith('/admin/posts')
+                      ? 'border-emerald-pool text-gray-900'
+                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                  } cursor-pointer`}>
+                    Posts
+                  </span>
+                </Link>
+                <Link href="/admin/categories">
+                  <span className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                    router.pathname.startsWith('/admin/categories')
+                      ? 'border-emerald-pool text-gray-900'
+                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                  } cursor-pointer`}>
+                    Categories
+                  </span>
+                </Link>
+              </div>
+            </div>
+            <div className="flex items-center">
+              <button
+                onClick={handleSignOut}
+                className="ml-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-emerald-pool hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-pool"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Main Content */}
+      <div className="py-10">
+        <main>
+          <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            {children}
+          </div>
+        </main>
+      </div>
+    </div>
+  )
+}
+----------------------------------------
 
 File:   ContactEnrichmentForm.js
 
@@ -291,7 +397,8 @@ export default function Header() {
           </Link>
           <div className="hidden md:flex space-x-6">
             <Link href="#features"><a className="text-napoleon hover:text-emerald-pool transition duration-300">Features</a></Link>
-            <Link href="#how-it-works"><a className="text-napoleon hover:text-emerald-pool transition duration-300">How It Works</a></Link>
+            <Link href="/blog">
+                <a className="text-napoleon hover:text-emerald-pool transition duration-300">Blog</a></Link>
             <Link href="#pricing"><a className="text-napoleon hover:text-emerald-pool transition duration-300">Pricing</a></Link>
             <Link href="#testimonials"><a className="text-napoleon hover:text-emerald-pool transition duration-300">Testimonials</a></Link>
           </div>
@@ -302,6 +409,1706 @@ export default function Header() {
       </nav>
     </header>
   );
+}
+----------------------------------------
+
+File:   ImageUpload.js
+
+// File: components/ImageUpload.js
+import { useState } from 'react'
+import { useSupabaseClient } from '@supabase/auth-helpers-react'
+import { v4 as uuidv4 } from 'uuid'
+
+export default function ImageUpload({ onUpload }) {
+  const [uploading, setUploading] = useState(false)
+  const supabase = useSupabaseClient()
+
+  async function handleUpload(event) {
+    try {
+      setUploading(true)
+
+      if (!event.target.files || event.target.files.length === 0) {
+        throw new Error('You must select an image to upload.')
+      }
+
+      const file = event.target.files[0]
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${uuidv4()}.${fileExt}`
+      const filePath = `post-images/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('media')
+        .upload(filePath, file)
+
+      if (uploadError) {
+        throw uploadError
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('media')
+        .getPublicUrl(filePath)
+
+      onUpload(publicUrl)
+    } catch (error) {
+      alert(error.message)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700">
+        Featured Image
+      </label>
+      <div className="mt-1 flex items-center">
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleUpload}
+          disabled={uploading}
+          className="block w-full text-sm text-gray-500
+            file:mr-4 file:py-2 file:px-4
+            file:rounded-md file:border-0
+            file:text-sm file:font-semibold
+            file:bg-emerald-pool file:text-white
+            hover:file:bg-emerald-pool/90"
+        />
+        {uploading && <span className="ml-2">Uploading...</span>}
+      </div>
+    </div>
+  )
+}
+----------------------------------------
+
+File:   MainLayout.js
+
+// File: components/MainLayout.js
+import Link from 'next/link'
+
+export default function MainLayout({ children }) {
+  return (
+    <div className="min-h-screen flex flex-col">
+      <nav className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center">
+              <Link href="/">
+                <span className="flex-shrink-0 flex items-center">
+                  <img
+                    className="h-8 w-auto"
+                    src="/logo.svg"
+                    alt="Data Forge"
+                  />
+                </span>
+              </Link>
+              <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+                <Link href="/services">
+                  <span className="text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-emerald-pool">
+                    Services
+                  </span>
+                </Link>
+                <Link href="/blog">
+                  <span className="text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-emerald-pool">
+                    Blog
+                  </span>
+                </Link>
+                <Link href="/resources">
+                  <span className="text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-emerald-pool">
+                    Resources
+                  </span>
+                </Link>
+                <Link href="/pricing">
+                  <span className="text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-emerald-pool">
+                    Pricing
+                  </span>
+                </Link>
+              </div>
+            </div>
+            <div className="hidden sm:flex sm:items-center sm:space-x-4">
+              <Link href="/login">
+                <span className="text-gray-900 hover:text-emerald-pool px-3 py-2">
+                  Login
+                </span>
+              </Link>
+              <Link href="/getting-started">
+                <span className="bg-emerald-pool text-white px-4 py-2 rounded-lg hover:bg-opacity-90">
+                  Getting Started
+                </span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <main className="flex-grow">
+        {children}
+      </main>
+
+      <footer className="bg-gray-50 border-t">
+        <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+          {/* Add footer content */}
+        </div>
+      </footer>
+    </div>
+  )
+}
+----------------------------------------
+
+Directory:   PostEditor
+
+File:     index.js
+
+// File: components/PostEditor/index.js
+import { useState, useEffect } from 'react'
+import { useSupabaseClient } from '@supabase/auth-helpers-react'
+import { useRouter } from 'next/router'
+import { Alert, AlertDescription } from '../../components/ui/alert'
+import RichTextEditor from './RichTextEditor'
+import ImageUpload from './ImageUpload'
+import TableOfContents from './TableOfContents'
+import PostPreview from './PostPreview'
+import { extractTableOfContents, calculateReadTime } from './utils'
+
+export default function PostEditor({ postId }) {
+  const router = useRouter()
+  const supabase = useSupabaseClient()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [isPreview, setIsPreview] = useState(false)
+  const [content, setContent] = useState('')
+  const [categories, setCategories] = useState([])
+  const [selectedCategories, setSelectedCategories] = useState([])
+  const [formData, setFormData] = useState({
+    title: '',
+    slug: '',
+    excerpt: '',
+    featured_image: '',
+    status: 'draft',
+    meta_title: '',
+    meta_description: '',
+    canonical_url: '',
+    og_image: '',
+    social_image: '',
+    author_bio: '',
+    author_image: '',
+    is_featured: false,
+    table_of_contents: [],
+    estimated_read_time: 0
+  })
+
+  useEffect(() => {
+    fetchCategories()
+    if (postId) {
+      fetchPost()
+    }
+  }, [postId])
+
+  useEffect(() => {
+    // Update table of contents when content changes
+    const toc = extractTableOfContents(content)
+    const readTime = calculateReadTime(content)
+    setFormData(prev => ({
+      ...prev,
+      table_of_contents: toc,
+      estimated_read_time: readTime
+    }))
+  }, [content])
+
+  async function fetchCategories() {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('name')
+
+      if (error) throw error
+      setCategories(data || [])
+    } catch (error) {
+      console.error('Error fetching categories:', error)
+    }
+  }
+
+  async function fetchPost() {
+    try {
+      const { data, error } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          posts_categories(category_id)
+        `)
+        .eq('id', postId)
+        .single()
+
+      if (error) throw error
+
+      setFormData({
+        ...data,
+        meta_title: data.meta_title || data.title,
+        meta_description: data.meta_description || data.excerpt
+      })
+      setContent(data.content)
+      setSelectedCategories(data.posts_categories.map(pc => pc.category_id))
+    } catch (error) {
+      setError(error.message)
+    }
+  }
+
+  function handleChange(e) {
+    const { name, value, type, checked } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }))
+
+    // Auto-generate slug from title
+    if (name === 'title' && !postId) {
+      const slug = value
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '')
+      setFormData(prev => ({ ...prev, slug }))
+    }
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+
+    try {
+      const postData = {
+        ...formData,
+        content,
+        updated_at: new Date().toISOString()
+      }
+
+      let postId
+      if (postData.id) {
+        const { data, error } = await supabase
+          .from('posts')
+          .update(postData)
+          .eq('id', postData.id)
+          .select()
+          .single()
+
+        if (error) throw error
+        postId = postData.id
+      } else {
+        const { data, error } = await supabase
+          .from('posts')
+          .insert([{
+            ...postData,
+            author_id: (await supabase.auth.getUser()).data.user.id
+          }])
+          .select()
+          .single()
+
+        if (error) throw error
+        postId = data.id
+      }
+
+      // Handle categories
+      if (selectedCategories.length > 0) {
+        // Remove existing categories if updating
+        if (postData.id) {
+          await supabase
+            .from('posts_categories')
+            .delete()
+            .eq('post_id', postId)
+        }
+
+        // Insert new categories
+        const { error: categoriesError } = await supabase
+          .from('posts_categories')
+          .insert(
+            selectedCategories.map(categoryId => ({
+              post_id: postId,
+              category_id: categoryId
+            }))
+          )
+
+        if (categoriesError) throw categoriesError
+      }
+
+      router.push('/admin/posts')
+    } catch (error) {
+      setError(error.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (isPreview) {
+    return (
+      <PostPreview
+        post={{
+          ...formData,
+          content,
+          author: { bio: formData.author_bio, image: formData.author_image }
+        }}
+        onBack={() => setIsPreview(false)}
+      />
+    )
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      <div className="grid grid-cols-3 gap-6">
+        <div className="col-span-2 space-y-6">
+          {/* Main Content */}
+          <div className="space-y-4">
+            <input
+              type="text"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              placeholder="Post Title"
+              className="w-full text-4xl font-bold border-0 border-b border-gray-200 focus:ring-0 focus:border-emerald-pool"
+              required
+            />
+
+            <div className="prose prose-lg max-w-none">
+              <RichTextEditor
+                initialContent={content}
+                onChange={setContent}
+              />
+            </div>
+          </div>
+
+          {/* SEO and Meta */}
+          <div className="bg-white p-6 rounded-lg shadow-sm space-y-4">
+            <h3 className="text-lg font-medium text-gray-900">SEO & Meta</h3>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Meta Title
+                <span className="text-sm text-gray-500 ml-2">
+                  ({formData.meta_title.length}/60)
+                </span>
+              </label>
+              <input
+                type="text"
+                name="meta_title"
+                value={formData.meta_title}
+                onChange={handleChange}
+                maxLength={60}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Meta Description
+                <span className="text-sm text-gray-500 ml-2">
+                  ({formData.meta_description.length}/160)
+                </span>
+              </label>
+              <textarea
+                name="meta_description"
+                value={formData.meta_description}
+                onChange={handleChange}
+                maxLength={160}
+                rows={3}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Canonical URL
+              </label>
+              <input
+                type="url"
+                name="canonical_url"
+                value={formData.canonical_url}
+                onChange={handleChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
+              />
+            </div>
+          </div>
+
+          {/* Author Info */}
+          <div className="bg-white p-6 rounded-lg shadow-sm space-y-4">
+            <h3 className="text-lg font-medium text-gray-900">Author Information</h3>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Author Bio
+              </label>
+              <textarea
+                name="author_bio"
+                value={formData.author_bio}
+                onChange={handleChange}
+                rows={3}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
+              />
+            </div>
+
+            <ImageUpload
+              currentImage={formData.author_image}
+              onUpload={(url) => setFormData(prev => ({ ...prev, author_image: url }))}
+              label="Author Image"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          {/* Sidebar */}
+          <div className="bg-white p-6 rounded-lg shadow-sm space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Status
+              </label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
+              >
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Categories
+              </label>
+              <div className="mt-2 space-y-2">
+                {categories.map(category => (
+                  <label key={category.id} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={selectedCategories.includes(category.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedCategories([...selectedCategories, category.id])
+                        } else {
+                          setSelectedCategories(selectedCategories.filter(id => id !== category.id))
+                        }
+                      }}
+                      className="rounded border-gray-300 text-emerald-pool focus:ring-emerald-pool"
+                    />
+                    <span className="ml-2">{category.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="is_featured"
+                  checked={formData.is_featured}
+                  onChange={handleChange}
+                  className="rounded border-gray-300 text-emerald-pool focus:ring-emerald-pool"
+                />
+                <span className="ml-2">Featured Post</span>
+              </label>
+            </div>
+
+            <div className="border-t pt-4">
+              <p className="text-sm text-gray-500">
+                Estimated read time: {formData.estimated_read_time} min
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow-sm space-y-4">
+            <h3 className="text-lg font-medium text-gray-900">Images</h3>
+
+            <ImageUpload
+              currentImage={formData.featured_image}
+              onUpload={(url) => setFormData(prev => ({ ...prev, featured_image: url }))}
+              label="Featured Image"
+            />
+
+            <ImageUpload
+              currentImage={formData.social_image}
+              onUpload={(url) => setFormData(prev => ({ ...prev, social_image: url }))}
+              label="Social Share Image"
+              hint="Recommended: 1200x630px"
+            />
+          </div>
+
+          <div className="flex space-x-4">
+            <button
+              type="button"
+              onClick={() => setIsPreview(true)}
+              className="flex-1 py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-pool"
+            >
+              Preview
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-pool hover:bg-emerald-pool/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-pool"
+            >
+              {loading ? 'Saving...' : postId ? 'Update' : 'Publish'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+  )
+}
+----------------------------------------
+
+File:     TableOfContents.js
+
+// File: components/PostEditor/TableOfContents.js
+import { useEffect, useState } from 'react'
+
+export default function TableOfContents({ content }) {
+  const [activeId, setActiveId] = useState('')
+  const [headings, setHeadings] = useState([])
+
+  useEffect(() => {
+    if (!content) return
+
+    const parser = new DOMParser()
+    const doc = parser.parseFromString(content, 'text/html')
+    const headingElements = doc.querySelectorAll('h2')
+
+    const extractedHeadings = Array.from(headingElements).map((heading, index) => {
+      const id = heading.id || `heading-${index}`
+      return {
+        id,
+        text: heading.textContent.trim()
+      }
+    })
+
+    setHeadings(extractedHeadings)
+
+    // Add IDs to actual document headings if they don't exist
+    document.querySelectorAll('h2').forEach((heading, index) => {
+      if (!heading.id) {
+        heading.id = `heading-${index}`
+      }
+    })
+  }, [content])
+
+  useEffect(() => {
+    const callback = (entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          setActiveId(entry.target.id)
+        }
+      })
+    }
+
+    const observer = new IntersectionObserver(callback, {
+      rootMargin: '-20% 0% -35% 0%',
+      threshold: 0
+    })
+
+    document.querySelectorAll('h2[id]').forEach((element) => {
+      observer.observe(element)
+    })
+
+    return () => observer.disconnect()
+  }, [headings])
+
+  const scrollToHeading = (id) => {
+    const element = document.getElementById(id)
+    if (!element) return
+
+    const header = document.querySelector('header')
+    const headerOffset = header ? header.offsetHeight : 0
+    const elementPosition = element.getBoundingClientRect().top + window.scrollY
+    const offsetPosition = elementPosition - headerOffset - 24
+
+    window.scrollTo({
+      top: offsetPosition,
+      behavior: 'smooth'
+    })
+  }
+
+  if (headings.length === 0) return null
+
+  return (
+    <nav 
+      className="sticky top-24 w-full bg-white rounded-lg p-6 shadow-sm"
+      aria-label="Table of contents"
+    >
+      <div className="border-b border-gray-200 pb-4">
+        <h4 className="text-lg font-bold text-[#6B46C1]">In this article</h4>
+      </div>
+      <div className="mt-4 max-h-[calc(100vh-250px)] overflow-y-auto pr-2 -mr-2 scroll-smooth">
+        <ul className="space-y-3">
+          {headings.map((heading) => (
+            <li key={heading.id}>
+              <button
+                onClick={() => scrollToHeading(heading.id)}
+                className={`
+                  group block w-full text-left py-2 pl-4 border-l-2 text-sm transition-all duration-200
+                  ${activeId === heading.id 
+                    ? 'border-[#6B46C1] text-[#6B46C1] font-medium' 
+                    : 'border-gray-200 text-gray-600 hover:text-[#6B46C1] hover:border-[#6B46C1]'
+                  }
+                `}
+              >
+                {heading.text}
+                <span 
+                  className={`
+                    ml-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200
+                    ${activeId === heading.id ? 'opacity-100' : ''}
+                  `}
+                >
+                  →
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </nav>
+  )
+}
+----------------------------------------
+
+File:   PostEditor.js
+
+// File: components/PostEditor.js
+import { useState, useEffect } from 'react'
+import { useSupabaseClient } from '@supabase/auth-helpers-react'
+import { useRouter } from 'next/router'
+import { Alert, AlertDescription } from '../components/ui/alert'
+import RichTextEditor from './RichTextEditor'
+import ImageUpload from './ImageUpload'
+
+export default function PostEditor({ postId }) {
+  const router = useRouter()
+  const supabase = useSupabaseClient()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [categories, setCategories] = useState([])
+  const [selectedCategories, setSelectedCategories] = useState([])
+  const [content, setContent] = useState('')
+  const [formData, setFormData] = useState({
+    title: '',
+    slug: '',
+    excerpt: '',
+    featured_image: '',
+    status: 'draft'
+  })
+
+  useEffect(() => {
+    fetchCategories()
+    if (postId) {
+      fetchPost()
+    }
+  }, [postId])
+
+  async function fetchCategories() {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('name')
+
+      if (error) throw error
+      setCategories(data)
+
+      if (postId) {
+        const { data: postCategories, error: postCategoriesError } = await supabase
+          .from('posts_categories')
+          .select('category_id')
+          .eq('post_id', postId)
+
+        if (postCategoriesError) throw postCategoriesError
+        setSelectedCategories(postCategories.map(pc => pc.category_id))
+      }
+    } catch (error) {
+      setError(error.message)
+    }
+  }
+
+  async function fetchPost() {
+    try {
+      const { data, error } = await supabase
+        .from('posts')
+        .select('*')
+        .eq('id', postId)
+        .single()
+
+      if (error) throw error
+
+      setFormData({
+        title: data.title,
+        slug: data.slug,
+        excerpt: data.excerpt,
+        featured_image: data.featured_image,
+        status: data.status
+      })
+      setContent(data.content)
+    } catch (error) {
+      setError(error.message)
+    }
+  }
+
+  function handleChange(e) {
+    const { name, value } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }))
+
+    // Auto-generate slug from title
+    if (name === 'title' && !postId) {
+      const slug = value
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '')
+      setFormData(prev => ({ ...prev, slug }))
+    }
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+
+    try {
+      const postData = {
+        ...formData,
+        content,
+        author_id: (await supabase.auth.getUser()).data.user.id,
+        updated_at: new Date().toISOString()
+      }
+
+      let postId
+      if (isEditing) {
+        const { data, error } = await supabase
+          .from('posts')
+          .update(postData)
+          .eq('id', editingPostId)
+          .select()
+          .single()
+
+        if (error) throw error
+        postId = editingPostId
+      } else {
+        const { data, error } = await supabase
+          .from('posts')
+          .insert([postData])
+          .select()
+          .single()
+
+        if (error) throw error
+        postId = data.id
+      }
+
+      // Handle categories
+      if (selectedCategories.length > 0) {
+        // First, delete existing categories if editing
+        if (isEditing) {
+          await supabase
+            .from('posts_categories')
+            .delete()
+            .eq('post_id', postId)
+        }
+
+        // Insert new categories
+        const { error: categoriesError } = await supabase
+          .from('posts_categories')
+          .insert(
+            selectedCategories.map(categoryId => ({
+              post_id: postId,
+              category_id: categoryId
+            }))
+          )
+
+        if (categoriesError) throw categoriesError
+      }
+
+      router.push('/admin/posts')
+    } catch (error) {
+      setError(error.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function updatePostCategories(postId) {
+    // Remove existing categories
+    await supabase
+      .from('posts_categories')
+      .delete()
+      .eq('post_id', postId)
+
+    // Add new categories
+    if (selectedCategories.length > 0) {
+      const categoryData = selectedCategories.map(categoryId => ({
+        post_id: postId,
+        category_id: categoryId
+      }))
+
+      const { error } = await supabase
+        .from('posts_categories')
+        .insert(categoryData)
+
+      if (error) throw error
+    }
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+
+    try {
+      const postData = {
+        ...formData,
+        content,
+        updated_at: new Date().toISOString()
+      }
+
+      if (postId) {
+        // Update existing post
+        const { data, error } = await supabase
+          .from('posts')
+          .update(postData)
+          .eq('id', postId)
+          .select()
+          .single()
+
+        if (error) throw error
+        await updatePostCategories(postId)
+      } else {
+        // Create new post
+        const { data, error } = await supabase
+          .from('posts')
+          .insert([{
+            ...postData,
+            author_id: (await supabase.auth.getUser()).data.user.id
+          }])
+          .select()
+          .single()
+
+        if (error) throw error
+        await updatePostCategories(data.id)
+      }
+
+      router.push('/admin/posts')
+    } catch (error) {
+      setError(error.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function handleImageUpload(url) {
+    setFormData(prev => ({
+      ...prev,
+      featured_image: url
+    }))
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      <div>
+        <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+          Title
+        </label>
+        <input
+          type="text"
+          id="title"
+          name="title"
+          value={formData.title}
+          onChange={handleChange}
+          required
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
+        />
+      </div>
+
+      <div>
+        <label htmlFor="slug" className="block text-sm font-medium text-gray-700">
+          Slug
+        </label>
+        <input
+          type="text"
+          id="slug"
+          name="slug"
+          value={formData.slug}
+          onChange={handleChange}
+          required
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700">
+          Content
+        </label>
+        <div className="mt-1">
+          <RichTextEditor
+            initialContent={content}
+            onChange={setContent}
+          />
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor="excerpt" className="block text-sm font-medium text-gray-700">
+          Excerpt
+        </label>
+        <textarea
+          id="excerpt"
+          name="excerpt"
+          value={formData.excerpt}
+          onChange={handleChange}
+          rows={3}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
+        />
+      </div>
+
+      <ImageUpload onUpload={handleImageUpload} />
+
+      {formData.featured_image && (
+        <div className="mt-2">
+          <img
+            src={formData.featured_image}
+            alt="Featured"
+            className="h-32 w-auto object-cover rounded-md"
+          />
+        </div>
+      )}
+
+      <div>
+        <label htmlFor="status" className="block text-sm font-medium text-gray-700">
+          Status
+        </label>
+        <select
+          id="status"
+          name="status"
+          value={formData.status}
+          onChange={handleChange}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
+        >
+          <option value="draft">Draft</option>
+          <option value="published">Published</option>
+          <option value="archived">Archived</option>
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700">
+          Categories
+        </label>
+        <div className="mt-2 space-y-2">
+          {categories.map(category => (
+            <label key={category.id} className="inline-flex items-center mr-4">
+              <input
+                type="checkbox"
+                checked={selectedCategories.includes(category.id)}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setSelectedCategories([...selectedCategories, category.id])
+                  } else {
+                    setSelectedCategories(selectedCategories.filter(id => id !== category.id))
+                  }
+                }}
+                className="rounded border-gray-300 text-emerald-pool focus:ring-emerald-pool"
+              />
+              <span className="ml-2">{category.name}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex justify-end space-x-3">
+        <button
+          type="button"
+          onClick={() => router.push('/admin/posts')}
+          className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-pool"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          disabled={loading}
+          className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-pool hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-pool"
+        >
+          {loading ? 'Saving...' : postId ? 'Update Post' : 'Create Post'}
+        </button>
+      </div>
+    </form>
+  )
+}
+----------------------------------------
+
+File:   RelatedPosts.js
+
+// File: components/RelatedPosts.js
+import Link from 'next/link'
+import { format } from 'date-fns'
+
+export default function RelatedPosts({ currentPost, posts }) {
+  if (!posts?.length) return null
+
+  return (
+    <div className="py-12 border-t border-gray-200">
+      <h2 className="text-2xl font-bold text-gray-900 mb-8">Related Articles</h2>
+      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+        {posts.map((post) => (
+          <article key={post.id} className="group">
+            {post.featured_image && (
+              <Link href={`/blog/${post.slug}`}>
+                <div className="relative rounded-lg overflow-hidden mb-4 aspect-[16/9]">
+                  <img
+                    src={post.featured_image}
+                    alt={post.title}
+                    className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+              </Link>
+            )}
+            <div>
+              {post.categories?.map((cat) => (
+                <span
+                  key={cat.id}
+                  className="inline-block text-xs font-medium text-emerald-pool mb-2 mr-2"
+                >
+                  {cat.name}
+                </span>
+              ))}
+              <Link href={`/blog/${post.slug}`}>
+                <h3 className="text-xl font-bold text-gray-900 group-hover:text-emerald-pool transition-colors mb-2">
+                  {post.title}
+                </h3>
+              </Link>
+              <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                {post.excerpt}
+              </p>
+              <div className="flex items-center text-sm text-gray-500">
+                <span>{format(new Date(post.published_at), 'MMM d, yyyy')}</span>
+                <span className="mx-2">·</span>
+                <span>{post.estimated_read_time} min read</span>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  )
+}
+----------------------------------------
+
+Directory:   RichTextEditor
+
+File:     index.js
+
+// File: components/RichTextEditor/index.js
+import { useEffect, useRef, useState } from 'react'
+import { EditorState } from 'prosemirror-state'
+import { EditorView } from 'prosemirror-view'
+import { Schema, DOMParser, DOMSerializer } from 'prosemirror-model'
+import { schema } from 'prosemirror-schema-basic'
+import { addListNodes } from 'prosemirror-schema-list'
+import { exampleSetup } from 'prosemirror-example-setup'
+
+// Extend the basic schema with lists
+const mySchema = new Schema({
+  nodes: addListNodes(schema.spec.nodes, 'paragraph block*', 'block'),
+  marks: schema.spec.marks
+})
+
+export default function RichTextEditor({ initialContent = '', onChange }) {
+  const editorRef = useRef()
+  const viewRef = useRef(null)
+  const [editorReady, setEditorReady] = useState(false)
+
+  useEffect(() => {
+    if (!editorRef.current || viewRef.current) return
+
+    // Create a document from the initial HTML content
+    const contentElement = document.createElement('div')
+    contentElement.innerHTML = initialContent
+
+    const state = EditorState.create({
+      doc: DOMParser.fromSchema(mySchema).parse(contentElement),
+      plugins: exampleSetup({ schema: mySchema })
+    })
+
+    const view = new EditorView(editorRef.current, {
+      state,
+      dispatchTransaction(transaction) {
+        const newState = view.state.apply(transaction)
+        view.updateState(newState)
+
+        if (onChange) {
+          // Convert the document to HTML and send it to the parent
+          const fragment = DOMSerializer
+            .fromSchema(mySchema)
+            .serializeFragment(newState.doc.content)
+
+          const tempDiv = document.createElement('div')
+          tempDiv.appendChild(fragment)
+          onChange(tempDiv.innerHTML)
+        }
+      }
+    })
+
+    viewRef.current = view
+    setEditorReady(true)
+
+    return () => {
+      if (viewRef.current) {
+        viewRef.current.destroy()
+      }
+    }
+  }, [initialContent])
+
+  return (
+    <div className="rich-text-editor">
+      <div className="border rounded-md p-4 min-h-[200px]" ref={editorRef} />
+      <style jsx global>{`
+        .ProseMirror {
+          position: relative;
+          word-wrap: break-word;
+          white-space: pre-wrap;
+          -webkit-font-variant-ligatures: none;
+          font-variant-ligatures: none;
+          min-height: 200px;
+          outline: none;
+        }
+
+        .ProseMirror p {
+          margin-bottom: 1em;
+        }
+
+        .ProseMirror h1 {
+          font-size: 2em;
+          font-weight: bold;
+          margin-bottom: 0.5em;
+        }
+
+        .ProseMirror h2 {
+          font-size: 1.5em;
+          font-weight: bold;
+          margin-bottom: 0.5em;
+        }
+
+        .ProseMirror h3 {
+          font-size: 1.17em;
+          font-weight: bold;
+          margin-bottom: 0.5em;
+        }
+
+        .ProseMirror ul, .ProseMirror ol {
+          padding-left: 30px;
+          margin-bottom: 1em;
+        }
+
+        .ProseMirror li {
+          margin-bottom: 0.5em;
+        }
+
+        .ProseMirror blockquote {
+          border-left: 3px solid #ddd;
+          margin-left: 0;
+          margin-right: 0;
+          padding-left: 1em;
+          color: #666;
+        }
+
+        .ProseMirror pre {
+          background-color: #f5f5f5;
+          padding: 0.5em;
+          border-radius: 3px;
+          margin-bottom: 1em;
+        }
+
+        .ProseMirror code {
+          background-color: #f5f5f5;
+          padding: 0.2em 0.4em;
+          border-radius: 3px;
+        }
+      `}</style>
+    </div>
+  )
+}
+
+// File: components/RichTextEditor/Toolbar.js
+import { useState } from 'react'
+
+export default function Toolbar({ editor }) {
+  const [showLinkInput, setShowLinkInput] = useState(false)
+  const [linkUrl, setLinkUrl] = useState('')
+
+  const buttons = [
+    {
+      icon: 'B',
+      title: 'Bold',
+      action: () => editor.chain().focus().toggleBold().run(),
+    },
+    {
+      icon: 'I',
+      title: 'Italic',
+      action: () => editor.chain().focus().toggleItalic().run(),
+    },
+    {
+      icon: 'H1',
+      title: 'Heading 1',
+      action: () => editor.chain().focus().toggleHeading({ level: 1 }).run(),
+    },
+    {
+      icon: 'H2',
+      title: 'Heading 2',
+      action: () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
+    },
+    {
+      icon: '•',
+      title: 'Bullet List',
+      action: () => editor.chain().focus().toggleBulletList().run(),
+    },
+    {
+      icon: '1.',
+      title: 'Ordered List',
+      action: () => editor.chain().focus().toggleOrderedList().run(),
+    },
+    {
+      icon: '"',
+      title: 'Blockquote',
+      action: () => editor.chain().focus().toggleBlockquote().run(),
+    },
+    {
+      icon: '🔗',
+      title: 'Link',
+      action: () => setShowLinkInput(true),
+    },
+  ]
+
+  const handleLinkSubmit = (e) => {
+    e.preventDefault()
+    editor.chain().focus().setLink({ href: linkUrl }).run()
+    setShowLinkInput(false)
+    setLinkUrl('')
+  }
+
+  return (
+    <div className="border-b p-2 flex items-center space-x-2">
+      {buttons.map((button, index) => (
+        <button
+          key={index}
+          onClick={button.action}
+          className="p-2 hover:bg-gray-100 rounded"
+          title={button.title}
+        >
+          {button.icon}
+        </button>
+      ))}
+
+      {showLinkInput && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <form onSubmit={handleLinkSubmit} className="bg-white p-4 rounded-lg">
+            <input
+              type="url"
+              value={linkUrl}
+              onChange={(e) => setLinkUrl(e.target.value)}
+              placeholder="Enter URL"
+              className="border p-2 rounded"
+            />
+            <div className="mt-2 flex justify-end space-x-2">
+              <button
+                type="button"
+                onClick={() => setShowLinkInput(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-emerald-pool text-white rounded hover:bg-opacity-90"
+              >
+                Add Link
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+    </div>
+  )
+}
+----------------------------------------
+
+File:   RichTextEditor.js
+
+// File: components/RichTextEditor.js
+import { useEditor, EditorContent } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+import Link from '@tiptap/extension-link'
+import Image from '@tiptap/extension-image'
+import Table from '@tiptap/extension-table'
+import TableRow from '@tiptap/extension-table-row'
+import TableCell from '@tiptap/extension-table-cell'
+import TableHeader from '@tiptap/extension-table-header'
+import CodeBlock from '@tiptap/extension-code-block'
+import { useSupabaseClient } from '@supabase/auth-helpers-react'
+
+const MenuBar = ({ editor, onImageUpload }) => {
+  const supabase = useSupabaseClient()
+
+  if (!editor) {
+    return null
+  }
+
+  const handleImageUpload = async (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Math.random()}.${fileExt}`
+      const filePath = `blog-images/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('media')
+        .upload(filePath, file)
+
+      if (uploadError) throw uploadError
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('media')
+        .getPublicUrl(filePath)
+
+      editor.chain().focus().setImage({ src: publicUrl }).run()
+    } catch (error) {
+      console.error('Error uploading image:', error)
+    }
+  }
+
+  return (
+    <div className="border-b p-2 flex flex-wrap gap-2">
+      <button
+        onClick={() => editor.chain().focus().toggleBold().run()}
+        className={`p-2 rounded ${editor.isActive('bold') ? 'bg-emerald-pool text-white' : 'bg-gray-100'}`}
+      >
+        Bold
+      </button>
+      <button
+        onClick={() => editor.chain().focus().toggleItalic().run()}
+        className={`p-2 rounded ${editor.isActive('italic') ? 'bg-emerald-pool text-white' : 'bg-gray-100'}`}
+      >
+        Italic
+      </button>
+      <button
+        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+        className={`p-2 rounded ${editor.isActive('heading', { level: 2 }) ? 'bg-emerald-pool text-white' : 'bg-gray-100'}`}
+      >
+        H2
+      </button>
+      <button
+        onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+        className={`p-2 rounded ${editor.isActive('heading', { level: 3 }) ? 'bg-emerald-pool text-white' : 'bg-gray-100'}`}
+      >
+        H3
+      </button>
+      <button
+        onClick={() => editor.chain().focus().toggleBulletList().run()}
+        className={`p-2 rounded ${editor.isActive('bulletList') ? 'bg-emerald-pool text-white' : 'bg-gray-100'}`}
+      >
+        Bullet List
+      </button>
+      <button
+        onClick={() => editor.chain().focus().toggleOrderedList().run()}
+        className={`p-2 rounded ${editor.isActive('orderedList') ? 'bg-emerald-pool text-white' : 'bg-gray-100'}`}
+      >
+        Numbered List
+      </button>
+      <button
+        onClick={() => editor.chain().focus().toggleBlockquote().run()}
+        className={`p-2 rounded ${editor.isActive('blockquote') ? 'bg-emerald-pool text-white' : 'bg-gray-100'}`}
+      >
+        Quote
+      </button>
+      <button
+        onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+        className={`p-2 rounded ${editor.isActive('codeBlock') ? 'bg-emerald-pool text-white' : 'bg-gray-100'}`}
+      >
+        Code
+      </button>
+      <label className="p-2 rounded bg-gray-100 cursor-pointer">
+        Image
+        <input
+          type="file"
+          className="hidden"
+          accept="image/*"
+          onChange={handleImageUpload}
+        />
+      </label>
+      <button
+        onClick={() => {
+          const url = window.prompt('Enter URL')
+          if (url) {
+            editor.chain().focus().setLink({ href: url }).run()
+          }
+        }}
+        className={`p-2 rounded ${editor.isActive('link') ? 'bg-emerald-pool text-white' : 'bg-gray-100'}`}
+      >
+        Link
+      </button>
+    </div>
+  )
+}
+----------------------------------------
+
+File:   SocialShare.js
+
+// File: components/SocialShare.js
+import { useState } from 'react'
+
+export default function SocialShare({ url, title, description }) {
+  const [copied, setCopied] = useState(false)
+
+  const shareButtons = [
+    {
+      name: 'LinkedIn',
+      icon: '💼',
+      href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
+      className: 'bg-[#0077B5] hover:bg-[#006297]'
+    },
+    {
+      name: 'Facebook',
+      icon: '📘',
+      href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+      className: 'bg-[#1877F2] hover:bg-[#0C63D4]'
+    },
+    {
+      name: 'Twitter',
+      icon: '🐦',
+      href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`,
+      className: 'bg-[#1DA1F2] hover:bg-[#0C85D0]'
+    },
+    {
+      name: 'Email',
+      icon: '📧',
+      href: `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(`${description}\n\nRead more at: ${url}`)}`,
+      className: 'bg-[#6B46C1] hover:bg-[#553C9A]'
+    }
+  ]
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      console.error('Failed to copy:', err)
+    }
+  }
+
+  return (
+    <div className="rounded-lg">
+      <h3 className="text-lg font-medium text-gray-900 mb-4">Share this article</h3>
+      <div className="flex flex-wrap gap-3">
+        {shareButtons.map((button) => (
+          <a
+            key={button.name}
+            href={button.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`${button.className} p-3 rounded-full text-white transition-all duration-200 hover:scale-105 text-lg`}
+            title={`Share on ${button.name}`}
+          >
+            {button.icon}
+          </a>
+        ))}
+        <button
+          onClick={copyToClipboard}
+          className={`p-3 rounded-full transition-all duration-200 hover:scale-105 text-lg ${
+            copied 
+              ? 'bg-green-500 hover:bg-green-600 text-white' 
+              : 'bg-gray-200 hover:bg-gray-300 text-gray-600'
+          }`}
+          title="Copy link"
+        >
+          {copied ? '✓' : '🔗'}
+        </button>
+      </div>
+      {copied && (
+        <p className="mt-2 text-sm text-green-600">Link copied to clipboard!</p>
+      )}
+    </div>
+  )
+}
+----------------------------------------
+
+Directory:   ui
+
+File:     alert.js
+
+// File: components/ui/alert.js
+import * as React from "react"
+
+const Alert = React.forwardRef(({ className, variant = "default", ...props }, ref) => {
+  const variantStyles = {
+    default: "bg-background text-foreground",
+    destructive: "bg-red-50 text-red-700 border-red-200"
+  }
+
+  return (
+    <div
+      ref={ref}
+      role="alert"
+      className={`relative w-full rounded-lg border p-4 ${variantStyles[variant]} ${className}`}
+      {...props}
+    />
+  )
+})
+Alert.displayName = "Alert"
+
+const AlertTitle = React.forwardRef(({ className, ...props }, ref) => (
+  <h5
+    ref={ref}
+    className={`mb-1 font-medium leading-none tracking-tight ${className}`}
+    {...props}
+  />
+))
+AlertTitle.displayName = "AlertTitle"
+
+const AlertDescription = React.forwardRef(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={`text-sm [&_p]:leading-relaxed ${className}`}
+    {...props}
+  />
+))
+AlertDescription.displayName = "AlertDescription"
+
+export { Alert, AlertTitle, AlertDescription }
+----------------------------------------
+
+File:     card.js
+
+// File: components/ui/card.js
+import * as React from "react"
+
+const Card = React.forwardRef(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={`rounded-lg border bg-card text-card-foreground shadow-sm ${className}`}
+    {...props}
+  />
+))
+Card.displayName = "Card"
+
+const CardHeader = React.forwardRef(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={`flex flex-col space-y-1.5 p-6 ${className}`}
+    {...props}
+  />
+))
+CardHeader.displayName = "CardHeader"
+
+const CardTitle = React.forwardRef(({ className, ...props }, ref) => (
+  <h3
+    ref={ref}
+    className={`text-2xl font-semibold leading-none tracking-tight ${className}`}
+    {...props}
+  />
+))
+CardTitle.displayName = "CardTitle"
+
+const CardDescription = React.forwardRef(({ className, ...props }, ref) => (
+  <p
+    ref={ref}
+    className={`text-sm text-muted-foreground ${className}`}
+    {...props}
+  />
+))
+CardDescription.displayName = "CardDescription"
+
+const CardContent = React.forwardRef(({ className, ...props }, ref) => (
+  <div ref={ref} className={`p-6 pt-0 ${className}`} {...props} />
+))
+CardContent.displayName = "CardContent"
+
+const CardFooter = React.forwardRef(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={`flex items-center p-6 pt-0 ${className}`}
+    {...props}
+  />
+))
+CardFooter.displayName = "CardFooter"
+
+export { 
+  Card, 
+  CardHeader, 
+  CardTitle, 
+  CardDescription, 
+  CardContent, 
+  CardFooter 
+}
+----------------------------------------
+
+Directory: lib
+
+File:   supabaseClient.js
+
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+----------------------------------------
+
+File: middleware.ts
+
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+
+export async function middleware(req: NextRequest) {
+  const res = NextResponse.next()
+  const supabase = createMiddlewareClient({ req, res })
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  // If trying to access admin page without auth
+  if (req.nextUrl.pathname.startsWith('/admin')) {
+    if (!session) {
+      return NextResponse.redirect(new URL('/auth/signin', req.url))
+    }
+
+    // Check if user has admin role (we'll set this up later)
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', session.user.id)
+      .single()
+
+    if (profile?.role !== 'admin') {
+      return NextResponse.redirect(new URL('/', req.url))
+    }
+  }
+
+  return res
+}
+
+export const config = {
+  matcher: ['/admin/:path*']
 }
 ----------------------------------------
 
@@ -338,12 +2145,33 @@ File: package.json
   },
   "dependencies": {
     "@heroicons/react": "^2.1.5",
+    "@supabase/auth-helpers-nextjs": "^0.8.7",
+    "@supabase/auth-helpers-react": "^0.4.2",
+    "@supabase/supabase-js": "^2.45.6",
+    "@tiptap/extension-image": "^2.9.1",
+    "@tiptap/extension-link": "^2.9.1",
+    "@tiptap/react": "^2.9.1",
+    "@tiptap/starter-kit": "^2.9.1",
+    "date-fns": "^2.30.0",
     "framer-motion": "^6.5.1",
+    "lucide-react": "^0.263.1",
     "next": "12.3.4",
+    "prosemirror-commands": "^1.5.2",
+    "prosemirror-example-setup": "^1.2.3",
+    "prosemirror-model": "^1.19.3",
+    "prosemirror-schema-basic": "^1.2.2",
+    "prosemirror-schema-list": "^1.4.1",
+    "prosemirror-state": "^1.4.3",
+    "prosemirror-view": "^1.31.8",
     "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
+    "@tailwindcss/aspect-ratio": "^0.4.2",
+    "@tailwindcss/forms": "^0.5.9",
+    "@tailwindcss/line-clamp": "^0.4.4",
+    "@tailwindcss/typography": "^0.5.15",
     "@types/node": "22.7.5",
     "@types/react": "18.3.11",
     "autoprefixer": "^10.4.14",
@@ -358,6 +2186,766 @@ File: package.json
 ----------------------------------------
 
 Directory: pages
+
+Directory:   admin
+
+Directory:     categories
+
+File:       index.js
+
+// File: pages/admin/categories/index.js
+import { useState, useEffect } from 'react'
+import { useSupabaseClient } from '@supabase/auth-helpers-react'
+import AdminLayout from '../../../components/AdminLayout'
+import { Alert, AlertDescription } from '../../../components/ui/alert'
+
+export default function CategoriesManager() {
+  const [categories, setCategories] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [newCategory, setNewCategory] = useState({ name: '', slug: '', description: '' })
+  const [editingCategory, setEditingCategory] = useState(null)
+  const supabase = useSupabaseClient()
+
+  useEffect(() => {
+    fetchCategories()
+  }, [])
+
+  async function fetchCategories() {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('name')
+
+      if (error) throw error
+      setCategories(data)
+    } catch (error) {
+      setError(error.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function handleInputChange(e, isEditing = false) {
+    const { name, value } = e.target
+    if (isEditing) {
+      setEditingCategory(prev => ({ ...prev, [name]: value }))
+    } else {
+      setNewCategory(prev => ({ ...prev, [name]: value }))
+      // Auto-generate slug from name
+      if (name === 'name') {
+        const slug = value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+        setNewCategory(prev => ({ ...prev, slug }))
+      }
+    }
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setError(null)
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .insert([newCategory])
+
+      if (error) throw error
+
+      setCategories([...categories, data[0]])
+      setNewCategory({ name: '', slug: '', description: '' })
+    } catch (error) {
+      setError(error.message)
+    }
+  }
+
+  async function handleUpdate(e) {
+    e.preventDefault()
+    setError(null)
+    try {
+      const { error } = await supabase
+        .from('categories')
+        .update(editingCategory)
+        .eq('id', editingCategory.id)
+
+      if (error) throw error
+
+      setCategories(categories.map(cat => 
+        cat.id === editingCategory.id ? editingCategory : cat
+      ))
+      setEditingCategory(null)
+    } catch (error) {
+      setError(error.message)
+    }
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setError(null)
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .insert([newCategory])
+        .select() // Add this to return the inserted data
+
+      if (error) throw error
+
+      // Update to handle the returned data properly
+      if (data && data.length > 0) {
+        setCategories([...categories, data[0]])
+        setNewCategory({ name: '', slug: '', description: '' })
+      } else {
+        throw new Error('No data returned from insert')
+      }
+    } catch (error) {
+      setError(error.message)
+    }
+  }
+
+  async function handleDelete(id) {
+    if (!window.confirm('Are you sure you want to delete this category?')) return
+
+    try {
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+
+      setCategories(categories.filter(cat => cat.id !== id))
+    } catch (error) {
+      setError(error.message)
+    }
+  }
+
+  return (
+    <AdminLayout>
+      <div className="bg-white shadow rounded-lg p-6">
+        <h1 className="text-2xl font-semibold text-gray-900 mb-6">Categories</h1>
+
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {/* Add New Category Form */}
+        <form onSubmit={handleSubmit} className="mb-8 p-4 border rounded-lg">
+          <h2 className="text-lg font-medium mb-4">Add New Category</h2>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Name</label>
+              <input
+                type="text"
+                name="name"
+                value={newCategory.name}
+                onChange={handleInputChange}
+                required
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Slug</label>
+              <input
+                type="text"
+                name="slug"
+                value={newCategory.slug}
+                onChange={handleInputChange}
+                required
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700">Description</label>
+              <textarea
+                name="description"
+                value={newCategory.description}
+                onChange={handleInputChange}
+                rows="3"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
+              />
+            </div>
+          </div>
+          <button
+            type="submit"
+            className="mt-4 px-4 py-2 bg-emerald-pool text-white rounded-md hover:bg-opacity-90"
+          >
+            Add Category
+          </button>
+        </form>
+
+        {/* Categories List */}
+        {loading ? (
+          <div className="text-center text-gray-500">Loading categories...</div>
+        ) : categories.length === 0 ? (
+          <div className="text-center text-gray-500">No categories yet.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Slug</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {categories.map(category => (
+                  <tr key={category.id}>
+                    {editingCategory?.id === category.id ? (
+                      <td colSpan="4">
+                        <form onSubmit={handleUpdate} className="p-4">
+                          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                            <input
+                              type="text"
+                              name="name"
+                              value={editingCategory.name}
+                              onChange={e => handleInputChange(e, true)}
+                              className="rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
+                            />
+                            <input
+                              type="text"
+                              name="slug"
+                              value={editingCategory.slug}
+                              onChange={e => handleInputChange(e, true)}
+                              className="rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
+                            />
+                            <input
+                              type="text"
+                              name="description"
+                              value={editingCategory.description}
+                              onChange={e => handleInputChange(e, true)}
+                              className="rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
+                            />
+                          </div>
+                          <div className="mt-2 flex justify-end space-x-2">
+                            <button
+                              type="button"
+                              onClick={() => setEditingCategory(null)}
+                              className="px-3 py-1 text-gray-600 hover:text-gray-800"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="submit"
+                              className="px-3 py-1 bg-emerald-pool text-white rounded-md hover:bg-opacity-90"
+                            >
+                              Save
+                            </button>
+                          </div>
+                        </form>
+                      </td>
+                    ) : (
+                      <>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {category.name}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {category.slug}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-500">
+                          {category.description}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button
+                            onClick={() => setEditingCategory(category)}
+                            className="text-emerald-pool hover:text-emerald-pool/80 mr-3"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(category.id)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </AdminLayout>
+  )
+}
+----------------------------------------
+
+File:     index.js
+
+// File: pages/admin/index.js
+import { useEffect, useState } from 'react'
+import { useSupabaseClient, useSession } from '@supabase/auth-helpers-react'
+import AdminLayout from '../../components/AdminLayout'
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
+import { useRouter } from 'next/router'
+
+export default function AdminDashboard() {
+  const session = useSession()
+  const router = useRouter()
+  const supabase = useSupabaseClient()
+  const [stats, setStats] = useState({
+    totalPosts: 0,
+    publishedPosts: 0,
+    draftPosts: 0,
+    categories: 0
+  })
+
+  useEffect(() => {
+    if (!session) {
+      router.push('/auth/signin')
+    } else {
+      fetchStats()
+    }
+  }, [session])
+
+  async function fetchStats() {
+    try {
+      // Get total posts
+      const { count: totalPosts } = await supabase
+        .from('posts')
+        .select('*', { count: 'exact', head: true })
+
+      // Get published posts
+      const { count: publishedPosts } = await supabase
+        .from('posts')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'published')
+
+      // Get draft posts
+      const { count: draftPosts } = await supabase
+        .from('posts')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'draft')
+
+      // Get categories
+      const { count: categories } = await supabase
+        .from('categories')
+        .select('*', { count: 'exact', head: true })
+
+      setStats({
+        totalPosts: totalPosts || 0,
+        publishedPosts: publishedPosts || 0,
+        draftPosts: draftPosts || 0,
+        categories: categories || 0
+      })
+    } catch (error) {
+      console.error('Error fetching stats:', error)
+    }
+  }
+
+  if (!session) return null
+
+  return (
+    <AdminLayout>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="mt-2 text-gray-600">Welcome back to your CMS dashboard.</p>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Total Posts</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-emerald-pool">{stats.totalPosts}</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Published Posts</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-green-600">{stats.publishedPosts}</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Draft Posts</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-yellow-600">{stats.draftPosts}</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Categories</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-blue-600">{stats.categories}</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <button
+                onClick={() => router.push('/admin/posts/new')}
+                className="p-4 text-left bg-emerald-pool/10 rounded-lg hover:bg-emerald-pool/20 transition-colors"
+              >
+                <h3 className="font-semibold text-emerald-pool">Create New Post</h3>
+                <p className="text-sm text-gray-600 mt-1">Start writing a new blog post</p>
+              </button>
+
+              <button
+                onClick={() => router.push('/admin/categories')}
+                className="p-4 text-left bg-emerald-pool/10 rounded-lg hover:bg-emerald-pool/20 transition-colors"
+              >
+                <h3 className="font-semibold text-emerald-pool">Manage Categories</h3>
+                <p className="text-sm text-gray-600 mt-1">Organize your content</p>
+              </button>
+
+              <button
+                onClick={() => router.push('/admin/posts')}
+                className="p-4 text-left bg-emerald-pool/10 rounded-lg hover:bg-emerald-pool/20 transition-colors"
+              >
+                <h3 className="font-semibold text-emerald-pool">View All Posts</h3>
+                <p className="text-sm text-gray-600 mt-1">Manage your existing content</p>
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </AdminLayout>
+  )
+}
+----------------------------------------
+
+Directory:     posts
+
+File:       [id].js
+
+import { useRouter } from 'next/router'
+import AdminLayout from '../../../components/AdminLayout'
+import PostEditor from '../../../components/PostEditor'
+
+export default function EditPost() {
+  const router = useRouter()
+  const { id } = router.query
+
+  return (
+    <AdminLayout>
+      <div className="bg-white shadow rounded-lg p-6">
+        <h1 className="text-2xl font-semibold text-gray-900 mb-6">Edit Post</h1>
+        {id && <PostEditor postId={id} />}
+      </div>
+    </AdminLayout>
+  )
+}
+----------------------------------------
+
+File:       index.js
+
+// File: pages/admin/posts/index.js
+import { useState, useEffect } from 'react'
+import { useSupabaseClient } from '@supabase/auth-helpers-react'
+import AdminLayout from '../../../components/AdminLayout'
+import Link from 'next/link'
+import { format } from 'date-fns'
+import { Alert, AlertDescription } from '../../../components/ui/alert'
+import { Card, CardContent } from '../../../components/ui/card'
+
+export default function PostsList() {
+  const [posts, setPosts] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [filter, setFilter] = useState({
+    status: 'all',
+    category: 'all',
+    search: ''
+  })
+  const [categories, setCategories] = useState([])
+  const supabase = useSupabaseClient()
+
+  useEffect(() => {
+    Promise.all([fetchPosts(), fetchCategories()])
+  }, [])
+
+  useEffect(() => {
+    fetchPosts()
+  }, [filter])
+
+  async function fetchCategories() {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('name')
+
+      if (error) throw error
+      setCategories(data || [])
+    } catch (error) {
+      console.error('Error fetching categories:', error)
+    }
+  }
+
+  async function fetchPosts() {
+    try {
+      let query = supabase
+        .from('posts')
+        .select(`
+          *,
+          profiles:author_id(full_name),
+          posts_categories!inner(
+            categories(
+              id,
+              name
+            )
+          )
+        `)
+        .order('created_at', { ascending: false })
+
+      if (filter.status !== 'all') {
+        query = query.eq('status', filter.status)
+      }
+
+      if (filter.search) {
+        query = query.or(`title.ilike.%${filter.search}%,content.ilike.%${filter.search}%`)
+      }
+
+      const { data, error } = await query
+
+      if (error) throw error
+
+      // Transform the data to include categories
+      const transformedPosts = data.map(post => ({
+        ...post,
+        categories: post.posts_categories.map(pc => pc.categories)
+      }))
+
+      // Filter by category if selected
+      const filteredPosts = filter.category === 'all'
+        ? transformedPosts
+        : transformedPosts.filter(post =>
+            post.categories.some(cat => cat.id === filter.category)
+          )
+
+      setPosts(filteredPosts)
+    } catch (error) {
+      setError(error.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleDelete(id) {
+    if (!window.confirm('Are you sure you want to delete this post?')) return
+
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+
+      setPosts(posts.filter(post => post.id !== id))
+    } catch (error) {
+      setError(error.message)
+    }
+  }
+
+  function handleFilterChange(e) {
+    const { name, value } = e.target
+    setFilter(prev => ({ ...prev, [name]: value }))
+  }
+
+  return (
+    <AdminLayout>
+      <Card>
+        <CardContent className="p-6">
+          <div className="sm:flex sm:items-center sm:justify-between mb-6">
+            <h1 className="text-2xl font-semibold text-gray-900">Posts</h1>
+            <Link href="/admin/posts/new">
+              <button className="mt-3 sm:mt-0 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-pool hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-pool">
+                New Post
+              </button>
+            </Link>
+          </div>
+
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {/* Filters */}
+          <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label htmlFor="search" className="block text-sm font-medium text-gray-700">
+                Search
+              </label>
+              <input
+                type="text"
+                id="search"
+                name="search"
+                value={filter.search}
+                onChange={handleFilterChange}
+                placeholder="Search posts..."
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="status" className="block text-sm font-medium text-gray-700">
+                Status
+              </label>
+              <select
+                id="status"
+                name="status"
+                value={filter.status}
+                onChange={handleFilterChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
+              >
+                <option value="all">All Status</option>
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="category" className="block text-sm font-medium text-gray-700">
+                Category
+              </label>
+              <select
+                id="category"
+                name="category"
+                value={filter.category}
+                onChange={handleFilterChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
+              >
+                <option value="all">All Categories</option>
+                {categories.map(category => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Posts Table */}
+          {loading ? (
+            <div className="text-center text-gray-500 py-8">Loading posts...</div>
+          ) : posts.length === 0 ? (
+            <div className="text-center text-gray-500 py-8">No posts found.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Title
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Author
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Categories
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Created
+                    </th>
+                    <th scope="col" className="relative px-6 py-3">
+                      <span className="sr-only">Actions</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {posts.map((post) => (
+                    <tr key={post.id}>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium text-gray-900">{post.title}</div>
+                        <div className="text-sm text-gray-500">{post.slug}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {post.profiles?.full_name}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-1">
+                          {post.categories.map(category => (
+                            <span
+                              key={category.id}
+                              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-pool/10 text-emerald-pool"
+                            >
+                              {category.name}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                          ${post.status === 'published' ? 'bg-green-100 text-green-800' : 
+                            post.status === 'draft' ? 'bg-yellow-100 text-yellow-800' : 
+                            'bg-gray-100 text-gray-800'}`}>
+                          {post.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {format(new Date(post.created_at), 'MMM d, yyyy')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <Link href={`/admin/posts/${post.id}`}>
+                          <span className="text-emerald-pool hover:text-emerald-pool/80 cursor-pointer mr-4">
+                            Edit
+                          </span>
+                        </Link>
+                        <button
+                          onClick={() => handleDelete(post.id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </AdminLayout>
+  )
+}
+----------------------------------------
+
+File:       new.js
+
+// File: pages/admin/posts/new.js
+import AdminLayout from '../../../components/AdminLayout'
+import PostEditor from '../../../components/PostEditor'
+
+export default function NewPost() {
+  return (
+    <AdminLayout>
+      <div className="bg-white shadow rounded-lg p-6">
+        <h1 className="text-2xl font-semibold text-gray-900 mb-6">Create New Post</h1>
+        <PostEditor />
+      </div>
+    </AdminLayout>
+  )
+}
+----------------------------------------
 
 Directory:   api
 
@@ -382,14 +2970,575 @@ export default function handler(
 File:   _app.js
 
 // File: pages/_app.js
-
+import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
+import { SessionContextProvider } from '@supabase/auth-helpers-react'
+import { useState } from 'react'
 import '../styles/globals.css'
 
+// For older versions of Next.js without built-in font support
+// Add this to your _document.js instead:
+// <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
 function MyApp({ Component, pageProps }) {
-  return <Component {...pageProps} />
+  const [supabaseClient] = useState(() => createPagesBrowserClient())
+
+  return (
+    <SessionContextProvider
+      supabaseClient={supabaseClient}
+      initialSession={pageProps.initialSession}
+    >
+      <div className="font-sans">
+        <Component {...pageProps} />
+      </div>
+    </SessionContextProvider>
+  )
 }
 
 export default MyApp
+----------------------------------------
+
+Directory:   auth
+
+File:     signin.js
+
+// File: pages/auth/signin.js
+import { useState } from 'react'
+import { useRouter } from 'next/router'
+import { useSupabaseClient } from '@supabase/auth-helpers-react'
+import { Alert, AlertDescription } from '../../components/ui/alert'
+import Link from 'next/link'
+
+export default function SignIn() {
+  const router = useRouter()
+  const supabase = useSupabaseClient()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(false)
+
+  const handleSignIn = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (error) throw error
+
+      // Check if user is admin
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', data.user.id)
+        .single()
+
+      if (profileError) throw profileError
+
+      if (profile.role !== 'admin') {
+        throw new Error('Access denied. Admin privileges required.')
+      }
+
+      router.push('/admin')
+    } catch (error) {
+      setError(error.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
+          Sign in to Data Forge CMS
+        </h2>
+        <p className="mt-2 text-center text-sm text-gray-600">
+          Admin access only
+        </p>
+      </div>
+
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          <form className="space-y-6" onSubmit={handleSignIn}>
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            <div>
+              <label 
+                htmlFor="email" 
+                className="block text-sm font-medium text-gray-700"
+              >
+                Email address
+              </label>
+              <div className="mt-1">
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-emerald-pool focus:outline-none focus:ring-emerald-pool sm:text-sm"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label 
+                htmlFor="password" 
+                className="block text-sm font-medium text-gray-700"
+              >
+                Password
+              </label>
+              <div className="mt-1">
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-emerald-pool focus:outline-none focus:ring-emerald-pool sm:text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <input
+                  id="remember-me"
+                  name="remember-me"
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-gray-300 text-emerald-pool focus:ring-emerald-pool"
+                />
+                <label 
+                  htmlFor="remember-me" 
+                  className="ml-2 block text-sm text-gray-900"
+                >
+                  Remember me
+                </label>
+              </div>
+
+              <div className="text-sm">
+                <Link
+                  href="/auth/forgot-password"
+                  className="font-medium text-emerald-pool hover:text-emerald-pool/80"
+                >
+                  Forgot your password?
+                </Link>
+              </div>
+            </div>
+
+            <div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex w-full justify-center rounded-md border border-transparent bg-emerald-pool py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-emerald-pool focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Signing in...' : 'Sign in'}
+              </button>
+            </div>
+          </form>
+
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-white px-2 text-gray-500">
+                  Need an account?
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-6 text-center">
+              <Link
+                href="/auth/signup"
+                className="font-medium text-emerald-pool hover:text-emerald-pool/80"
+              >
+                Request admin access
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+----------------------------------------
+
+Directory:   blog
+
+File:     index.js
+
+// File: pages/blog/index.js
+import { useEffect, useState } from 'react'
+import { createClient } from '@supabase/supabase-js'
+import Link from 'next/link'
+import { format } from 'date-fns'
+import MainLayout from '../../components/MainLayout'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+)
+
+export default function BlogIndex() {
+  const [posts, setPosts] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchPosts()
+  }, [])
+
+  async function fetchPosts() {
+    try {
+      const { data, error } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          profiles:author_id(full_name),
+          posts_categories(
+            categories(name, slug)
+          )
+        `)
+        .eq('status', 'published')
+        .order('published_at', { ascending: false })
+
+      if (error) throw error
+      setPosts(data || [])
+    } catch (error) {
+      console.error('Error fetching posts:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <MainLayout>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <h1 className="text-4xl font-bold text-gray-900 mb-8">Blog</h1>
+
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-pool mx-auto"></div>
+            </div>
+          ) : (
+            <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-3">
+              {posts.map((post) => (
+                <article key={post.id} className="group">
+                  <Link href={`/blog/${post.slug}`} passHref>
+                    <div className="cursor-pointer">
+                      {post.featured_image && (
+                        <div className="relative h-64 rounded-lg overflow-hidden mb-6">
+                          <img 
+                            src={post.featured_image}
+                            alt={post.title}
+                            className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-200"
+                          />
+                        </div>
+                      )}
+
+                      {/* Categories */}
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {post.posts_categories.map(({ categories }) => (
+                          <span
+                            key={categories.slug}
+                            className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-emerald-pool/10 text-emerald-pool"
+                          >
+                            {categories.name}
+                          </span>
+                        ))}
+                      </div>
+
+                      {/* Title */}
+                      <h2 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-emerald-pool transition-colors">
+                        {post.title}
+                      </h2>
+
+                      {/* Excerpt */}
+                      {post.excerpt && (
+                        <p className="text-gray-600 mb-4 line-clamp-2">
+                          {post.excerpt}
+                        </p>
+                      )}
+
+                      {/* Meta */}
+                      <div className="flex items-center text-sm text-gray-500">
+                        <span>{post.profiles?.full_name}</span>
+                        <span className="mx-2">·</span>
+                        <span>{format(new Date(post.published_at || post.created_at), 'MMM d, yyyy')}</span>
+                        {post.estimated_read_time && (
+                          <>
+                            <span className="mx-2">·</span>
+                            <span>{post.estimated_read_time} min read</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </MainLayout>
+  )
+}
+----------------------------------------
+
+File:     [slug].js
+
+// File: pages/blog/[slug].js
+import { useRouter } from 'next/router'
+import { useEffect, useState } from 'react'
+import { createClient } from '@supabase/supabase-js'
+import { format } from 'date-fns'
+import Link from 'next/link'
+import MainLayout from '../../components/MainLayout'
+import TableOfContents from '../../components/PostEditor/TableOfContents'
+import SocialShare from '../../components/SocialShare'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+)
+
+export default function BlogPost() {
+  const router = useRouter()
+  const { slug } = router.query
+  const [post, setPost] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [relatedPosts, setRelatedPosts] = useState([])
+
+  useEffect(() => {
+    if (slug) {
+      fetchPost()
+    }
+  }, [slug])
+
+  async function fetchPost() {
+    try {
+      const { data, error } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          profiles:author_id(*),
+          posts_categories(
+            categories(*)
+          )
+        `)
+        .eq('slug', slug)
+        .eq('status', 'published')
+        .single()
+
+      if (error) throw error
+      setPost(data)
+
+      // Fetch related posts
+      if (data?.posts_categories?.length) {
+        const categoryIds = data.posts_categories.map(pc => pc.categories.id)
+        const { data: related } = await supabase
+          .from('posts')
+          .select(`
+            id,
+            title,
+            slug,
+            published_at,
+            created_at
+          `)
+          .eq('status', 'published')
+          .neq('id', data.id)
+          .in('posts_categories.categories.id', categoryIds)
+          .limit(3)
+
+        setRelatedPosts(related || [])
+      }
+    } catch (error) {
+      console.error('Error fetching post:', error)
+      router.push('/blog')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-pool"></div>
+        </div>
+      </MainLayout>
+    )
+  }
+
+  if (!post) {
+    return (
+      <MainLayout>
+        <div className="flex flex-col items-center justify-center min-h-screen">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Post not found</h2>
+          <Link href="/blog">
+            <span className="text-emerald-pool hover:text-emerald-pool/80 cursor-pointer">
+              ← Back to Blog
+            </span>
+          </Link>
+        </div>
+      </MainLayout>
+    )
+  }
+
+  return (
+    <MainLayout>
+      <article className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="lg:grid lg:grid-cols-12 lg:gap-8">
+          {/* Main content */}
+          <div className="lg:col-span-8">
+            {post.featured_image && (
+              <img 
+                src={post.featured_image} 
+                alt={post.title}
+                className="w-full h-64 md:h-96 object-cover rounded-lg mb-8"
+              />
+            )}
+
+            <header className="mb-8">
+              <div className="flex flex-wrap gap-2 mb-4">
+                {post.posts_categories.map(({ categories }) => (
+                  <Link 
+                    key={categories.id} 
+                    href={`/blog/category/${categories.slug}`}
+                    passHref
+                  >
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-pool/10 text-emerald-pool cursor-pointer hover:bg-emerald-pool/20 transition-colors">
+                      {categories.name}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+
+              <h1 className="text-4xl font-bold text-gray-900 mb-4">{post.title}</h1>
+
+              <div className="flex items-center space-x-4">
+                <img
+                  src={post.profiles.avatar_url || '/default-avatar.png'}
+                  alt={post.profiles.full_name}
+                  className="w-12 h-12 rounded-full"
+                />
+                <div>
+                  <p className="text-sm font-medium text-gray-900">
+                    {post.profiles.full_name}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {format(new Date(post.published_at || post.created_at), 'MMMM d, yyyy')}
+                    {post.estimated_read_time && ` · ${post.estimated_read_time} min read`}
+                  </p>
+                </div>
+              </div>
+            </header>
+
+            <div 
+              className="prose prose-lg max-w-none"
+              dangerouslySetInnerHTML={{ __html: post.content }}
+            />
+
+            {/* Social Share */}
+            <div className="mt-12 pt-8 border-t">
+              <SocialShare 
+                url={typeof window !== 'undefined' ? window.location.href : ''}
+                title={post.title}
+                description={post.excerpt || ''}
+              />
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <aside className="hidden lg:block lg:col-span-4">
+            <div className="sticky top-8 space-y-8">
+              <TableOfContents content={post.content} />
+
+              {/* Author Bio */}
+              {post.profiles.bio && (
+                <div className="bg-white shadow-sm rounded-lg p-6 mt-8">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">About the Author</h3>
+                  <div className="flex items-start space-x-4">
+                    <img
+                      src={post.profiles.avatar_url || '/default-avatar.png'}
+                      alt={post.profiles.full_name}
+                      className="w-16 h-16 rounded-full"
+                    />
+                    <div>
+                      <h4 className="font-medium text-gray-900">{post.profiles.full_name}</h4>
+                      {post.profiles.title && (
+                        <p className="text-sm text-gray-500 mb-2">{post.profiles.title}</p>
+                      )}
+                      <p className="text-gray-600 text-sm">{post.profiles.bio}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Related Posts */}
+              {relatedPosts.length > 0 && (
+                <div className="bg-white shadow-sm rounded-lg p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Related Articles</h3>
+                  <div className="space-y-4">
+                    {relatedPosts.map(post => (
+                      <Link key={post.id} href={`/blog/${post.slug}`} passHref>
+                        <a className="block group">
+                          <h4 className="text-base font-medium text-gray-900 group-hover:text-emerald-pool transition-colors">
+                            {post.title}
+                          </h4>
+                          <p className="text-sm text-gray-500 mt-1">
+                            {format(new Date(post.published_at || post.created_at), 'MMM d, yyyy')}
+                          </p>
+                        </a>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </aside>
+        </div>
+      </article>
+    </MainLayout>
+  )
+}
+----------------------------------------
+
+File:   _document.js
+
+// File: pages/_document.js
+import { Html, Head, Main, NextScript } from 'next/document'
+
+export default function Document() {
+  return (
+    <Html lang="en">
+      <Head>
+        <link 
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" 
+          rel="stylesheet" 
+        />
+      </Head>
+      <body>
+        <Main />
+        <NextScript />
+      </body>
+    </Html>
+  )
+}
 ----------------------------------------
 
 File:   index.js
@@ -733,10 +3882,111 @@ To learn more about Next.js, take a look at the following resources:
 To make your next App run smoothly in production make sure to deploy your project with [Repl Deployments](https://docs.replit.com/hosting/deployments/about-deployments)!
 
 You can also produce a production build by running `npm run build` and [changing the run command](https://docs.replit.com/programming-ide/configuring-repl#run) to `npm run start`.
+# Data-Forge-Front
 
 ----------------------------------------
 
 Directory: styles
+
+File:   blog.css
+
+/* File: styles/blog.css */
+.blog-content {
+  @apply max-w-none text-gray-800;
+
+  /* Headings */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold text-gray-900 scroll-mt-24;
+  }
+
+  h1 {
+    @apply text-4xl md:text-5xl leading-tight mt-12 mb-8;
+  }
+
+  h2 {
+    @apply text-3xl leading-snug mt-12 mb-6;
+  }
+
+  h3 {
+    @apply text-2xl leading-snug mt-8 mb-4;
+  }
+
+  h4 {
+    @apply text-xl leading-snug mt-6 mb-4;
+  }
+
+  /* Paragraphs and spacing */
+  p {
+    @apply text-lg leading-relaxed mb-6;
+  }
+
+  /* Lists */
+  ul, ol {
+    @apply my-6 ml-6 space-y-2;
+  }
+
+  li {
+    @apply text-lg leading-relaxed;
+  }
+
+  /* Blockquotes */
+  blockquote {
+    @apply pl-6 border-l-4 border-emerald-pool/30 my-8 italic text-gray-700;
+  }
+
+  /* Code blocks */
+  pre {
+    @apply bg-gray-50 rounded-lg p-4 my-6 overflow-x-auto;
+  }
+
+  code {
+    @apply bg-gray-50 px-1.5 py-0.5 rounded text-sm font-mono;
+  }
+
+  /* Links */
+  a {
+    @apply text-emerald-pool hover:text-emerald-pool/80 underline-offset-2 transition-colors;
+  }
+
+  /* Images */
+  img {
+    @apply rounded-lg my-8;
+  }
+
+  /* Tables */
+  table {
+    @apply w-full my-8 border-collapse;
+  }
+
+  th, td {
+    @apply border border-gray-200 px-4 py-2;
+  }
+
+  th {
+    @apply bg-gray-50 font-semibold text-left;
+  }
+
+  /* Horizontal rule */
+  hr {
+    @apply my-12 border-gray-200;
+  }
+}
+
+/* Article layout spacing */
+.article-container {
+  @apply max-w-4xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+/* Article header */
+.article-header {
+  @apply mb-12 text-center;
+}
+
+/* Article meta */
+.article-meta {
+  @apply flex items-center justify-center space-x-4 text-sm text-gray-600;
+}
+----------------------------------------
 
 File:   globals.css
 
@@ -745,6 +3995,43 @@ File:   globals.css
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* File: styles/globals.css */
+
+/* Add these to your existing styles */
+.ProseMirror {
+  min-height: 200px;
+  outline: none;
+}
+
+.ProseMirror > * + * {
+  margin-top: 0.75em;
+}
+
+.ProseMirror ul,
+.ProseMirror ol {
+  padding: 0 1rem;
+}
+
+.ProseMirror h1,
+.ProseMirror h2,
+.ProseMirror h3,
+.ProseMirror h4,
+.ProseMirror h5,
+.ProseMirror h6 {
+  line-height: 1.1;
+  font-weight: 600;
+}
+
+.ProseMirror blockquote {
+  padding-left: 1rem;
+  border-left: 2px solid #ddd;
+}
+
+.ProseMirror a {
+  color: #346B6D;
+  text-decoration: underline;
+}
 ----------------------------------------
 
 File:   Home.module.css
@@ -870,7 +4157,8 @@ File:   Home.module.css
 
 File: tailwind.config.js
 
-// tailwind.config.js
+// File: tailwind.config.js
+const defaultTheme = require('tailwindcss/defaultTheme')
 
 module.exports = {
   content: [
@@ -887,11 +4175,192 @@ module.exports = {
         'napoleon': '#4A4A4A',
       },
       fontFamily: {
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Noto Sans', 'sans-serif', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'],
+        sans: ['Inter', ...defaultTheme.fontFamily.sans],
+        display: ['Inter', ...defaultTheme.fontFamily.sans],
+        mono: ['JetBrains Mono', ...defaultTheme.fontFamily.mono],
       },
+      typography: (theme) => ({
+        DEFAULT: {
+          css: {
+            color: theme('colors.gray.700'),
+            maxWidth: '100ch',
+            h1: {
+              fontSize: '2.5rem',
+              marginTop: '2rem',
+              marginBottom: '1rem',
+              lineHeight: '1.2',
+              fontWeight: '700',
+              color: theme('colors.gray.900'),
+              letterSpacing: '-0.025em',
+            },
+            h2: {
+              fontSize: '1.875rem',
+              marginTop: '2.5rem',
+              marginBottom: '1rem',
+              lineHeight: '1.3',
+              fontWeight: '700',
+              color: theme('colors.gray.900'),
+              letterSpacing: '-0.025em',
+            },
+            h3: {
+              fontSize: '1.5rem',
+              marginTop: '2rem',
+              marginBottom: '0.75rem',
+              lineHeight: '1.4',
+              fontWeight: '600',
+              color: theme('colors.gray.900'),
+            },
+            h4: {
+              fontSize: '1.25rem',
+              marginTop: '1.75rem',
+              marginBottom: '0.5rem',
+              lineHeight: '1.5',
+              fontWeight: '600',
+              color: theme('colors.gray.900'),
+            },
+            p: {
+              marginTop: '1.25rem',
+              marginBottom: '1.25rem',
+              lineHeight: '1.75',
+            },
+            'ul > li': {
+              position: 'relative',
+              paddingLeft: '1.75rem',
+              marginTop: '0.5rem',
+              marginBottom: '0.5rem',
+            },
+            'ul > li::before': {
+              content: '""',
+              width: '0.5rem',
+              height: '0.5rem',
+              position: 'absolute',
+              borderRadius: '50%',
+              backgroundColor: theme('colors.emerald-pool'),
+              left: 0,
+              top: '0.6875em',
+            },
+            'ol > li': {
+              position: 'relative',
+              paddingLeft: '1.75rem',
+              marginTop: '0.5rem',
+              marginBottom: '0.5rem',
+            },
+            a: {
+              color: theme('colors.emerald-pool'),
+              textDecoration: 'none',
+              fontWeight: '500',
+              '&:hover': {
+                textDecoration: 'underline',
+                textDecorationThickness: '2px',
+                textUnderlineOffset: '2px',
+              },
+            },
+            blockquote: {
+              fontWeight: '500',
+              fontStyle: 'italic',
+              color: theme('colors.gray.900'),
+              borderLeftWidth: '0.25rem',
+              borderLeftColor: theme('colors.emerald-pool'),
+              quotes: '"\\201C""\\201D""\\2018""\\2019"',
+              marginTop: '2rem',
+              marginBottom: '2rem',
+              paddingLeft: '1.5rem',
+            },
+            'blockquote p:first-of-type::before': {
+              content: 'open-quote',
+            },
+            'blockquote p:last-of-type::after': {
+              content: 'close-quote',
+            },
+            code: {
+              color: theme('colors.emerald-pool'),
+              fontWeight: '500',
+              fontSize: '0.875em',
+              backgroundColor: theme('colors.gray.100'),
+              padding: '0.25rem 0.4rem',
+              borderRadius: '0.25rem',
+              border: '1px solid',
+              borderColor: theme('colors.gray.200'),
+            },
+            'code::before': {
+              content: '""',
+            },
+            'code::after': {
+              content: '""',
+            },
+            pre: {
+              color: theme('colors.gray.200'),
+              backgroundColor: theme('colors.gray.900'),
+              overflowX: 'auto',
+              fontWeight: '400',
+              fontSize: '0.875em',
+              lineHeight: '1.7142857',
+              marginTop: '1.7142857em',
+              marginBottom: '1.7142857em',
+              borderRadius: '0.375rem',
+              paddingTop: '0.8571429em',
+              paddingRight: '1.1428571em',
+              paddingBottom: '0.8571429em',
+              paddingLeft: '1.1428571em',
+            },
+            'pre code': {
+              backgroundColor: 'transparent',
+              borderWidth: '0',
+              borderRadius: '0',
+              padding: '0',
+              fontWeight: '400',
+              color: 'inherit',
+              fontSize: 'inherit',
+              fontFamily: 'inherit',
+              lineHeight: 'inherit',
+            },
+            table: {
+              width: '100%',
+              tableLayout: 'auto',
+              textAlign: 'left',
+              marginTop: '2em',
+              marginBottom: '2em',
+            },
+            thead: {
+              borderBottomWidth: '1px',
+              borderBottomColor: theme('colors.gray.200'),
+            },
+            'thead th': {
+              color: theme('colors.gray.900'),
+              fontWeight: '600',
+              verticalAlign: 'bottom',
+              paddingRight: '1em',
+              paddingBottom: '0.5em',
+              paddingLeft: '1em',
+            },
+            'tbody tr': {
+              borderBottomWidth: '1px',
+              borderBottomColor: theme('colors.gray.200'),
+            },
+            'tbody tr:last-child': {
+              borderBottomWidth: '0',
+            },
+            'tbody td': {
+              verticalAlign: 'top',
+              paddingTop: '0.5em',
+              paddingRight: '1em',
+              paddingBottom: '0.5em',
+              paddingLeft: '1em',
+            },
+          },
+        },
+      }),
     },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/typography'),
+    require('@tailwindcss/forms'),
+    require('@tailwindcss/aspect-ratio'),
+    require('@tailwindcss/line-clamp'),
+  ],
+  future: {
+    hoverOnlyWhenSupported: true,
+  },
 }
 ----------------------------------------
 
@@ -931,6 +4400,85 @@ File: tsconfig.json
 
 ----------------------------------------
 
+Directory: utils
+
+File:   imageUpload.js
+
+// File: utils/imageUpload.js
+import { v4 as uuidv4 } from 'uuid'
+
+export async function uploadImage(file, supabase) {
+  const fileExt = file.name.split('.').pop()
+  const fileName = `${uuidv4()}.${fileExt}`
+  const filePath = `post-images/${fileName}`
+
+  const { error: uploadError } = await supabase.storage
+    .from('media')
+    .upload(filePath, file)
+
+  if (uploadError) {
+    throw uploadError
+  }
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('media')
+    .getPublicUrl(filePath)
+
+  return publicUrl
+}
+
+// File: components/ImageUpload.js
+import { useState } from 'react'
+import { useSupabaseClient } from '@supabase/auth-helpers-react'
+import { uploadImage } from '../utils/imageUpload'
+
+export default function ImageUpload({ onUpload }) {
+  const [uploading, setUploading] = useState(false)
+  const supabase = useSupabaseClient()
+
+  async function handleUpload(event) {
+    try {
+      setUploading(true)
+
+      if (!event.target.files || event.target.files.length === 0) {
+        throw new Error('You must select an image to upload.')
+      }
+
+      const file = event.target.files[0]
+      const fileUrl = await uploadImage(file, supabase)
+      onUpload(fileUrl)
+    } catch (error) {
+      alert(error.message)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700">
+        Featured Image
+      </label>
+      <div className="mt-1 flex items-center">
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleUpload}
+          disabled={uploading}
+          className="block w-full text-sm text-gray-500
+            file:mr-4 file:py-2 file:px-4
+            file:rounded-md file:border-0
+            file:text-sm file:font-semibold
+            file:bg-emerald-pool file:text-white
+            hover:file:bg-opacity-90"
+        />
+        {uploading && <span className="ml-2">Uploading...</span>}
+      </div>
+    </div>
+  )
+}
+----------------------------------------
+
 File: next.config.js
 
 // File: next.config.js
@@ -953,7 +4501,8 @@ module.exports = {
 
 File: tailwind.config.js
 
-// tailwind.config.js
+// File: tailwind.config.js
+const defaultTheme = require('tailwindcss/defaultTheme')
 
 module.exports = {
   content: [
@@ -970,11 +4519,192 @@ module.exports = {
         'napoleon': '#4A4A4A',
       },
       fontFamily: {
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Noto Sans', 'sans-serif', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'],
+        sans: ['Inter', ...defaultTheme.fontFamily.sans],
+        display: ['Inter', ...defaultTheme.fontFamily.sans],
+        mono: ['JetBrains Mono', ...defaultTheme.fontFamily.mono],
       },
+      typography: (theme) => ({
+        DEFAULT: {
+          css: {
+            color: theme('colors.gray.700'),
+            maxWidth: '100ch',
+            h1: {
+              fontSize: '2.5rem',
+              marginTop: '2rem',
+              marginBottom: '1rem',
+              lineHeight: '1.2',
+              fontWeight: '700',
+              color: theme('colors.gray.900'),
+              letterSpacing: '-0.025em',
+            },
+            h2: {
+              fontSize: '1.875rem',
+              marginTop: '2.5rem',
+              marginBottom: '1rem',
+              lineHeight: '1.3',
+              fontWeight: '700',
+              color: theme('colors.gray.900'),
+              letterSpacing: '-0.025em',
+            },
+            h3: {
+              fontSize: '1.5rem',
+              marginTop: '2rem',
+              marginBottom: '0.75rem',
+              lineHeight: '1.4',
+              fontWeight: '600',
+              color: theme('colors.gray.900'),
+            },
+            h4: {
+              fontSize: '1.25rem',
+              marginTop: '1.75rem',
+              marginBottom: '0.5rem',
+              lineHeight: '1.5',
+              fontWeight: '600',
+              color: theme('colors.gray.900'),
+            },
+            p: {
+              marginTop: '1.25rem',
+              marginBottom: '1.25rem',
+              lineHeight: '1.75',
+            },
+            'ul > li': {
+              position: 'relative',
+              paddingLeft: '1.75rem',
+              marginTop: '0.5rem',
+              marginBottom: '0.5rem',
+            },
+            'ul > li::before': {
+              content: '""',
+              width: '0.5rem',
+              height: '0.5rem',
+              position: 'absolute',
+              borderRadius: '50%',
+              backgroundColor: theme('colors.emerald-pool'),
+              left: 0,
+              top: '0.6875em',
+            },
+            'ol > li': {
+              position: 'relative',
+              paddingLeft: '1.75rem',
+              marginTop: '0.5rem',
+              marginBottom: '0.5rem',
+            },
+            a: {
+              color: theme('colors.emerald-pool'),
+              textDecoration: 'none',
+              fontWeight: '500',
+              '&:hover': {
+                textDecoration: 'underline',
+                textDecorationThickness: '2px',
+                textUnderlineOffset: '2px',
+              },
+            },
+            blockquote: {
+              fontWeight: '500',
+              fontStyle: 'italic',
+              color: theme('colors.gray.900'),
+              borderLeftWidth: '0.25rem',
+              borderLeftColor: theme('colors.emerald-pool'),
+              quotes: '"\\201C""\\201D""\\2018""\\2019"',
+              marginTop: '2rem',
+              marginBottom: '2rem',
+              paddingLeft: '1.5rem',
+            },
+            'blockquote p:first-of-type::before': {
+              content: 'open-quote',
+            },
+            'blockquote p:last-of-type::after': {
+              content: 'close-quote',
+            },
+            code: {
+              color: theme('colors.emerald-pool'),
+              fontWeight: '500',
+              fontSize: '0.875em',
+              backgroundColor: theme('colors.gray.100'),
+              padding: '0.25rem 0.4rem',
+              borderRadius: '0.25rem',
+              border: '1px solid',
+              borderColor: theme('colors.gray.200'),
+            },
+            'code::before': {
+              content: '""',
+            },
+            'code::after': {
+              content: '""',
+            },
+            pre: {
+              color: theme('colors.gray.200'),
+              backgroundColor: theme('colors.gray.900'),
+              overflowX: 'auto',
+              fontWeight: '400',
+              fontSize: '0.875em',
+              lineHeight: '1.7142857',
+              marginTop: '1.7142857em',
+              marginBottom: '1.7142857em',
+              borderRadius: '0.375rem',
+              paddingTop: '0.8571429em',
+              paddingRight: '1.1428571em',
+              paddingBottom: '0.8571429em',
+              paddingLeft: '1.1428571em',
+            },
+            'pre code': {
+              backgroundColor: 'transparent',
+              borderWidth: '0',
+              borderRadius: '0',
+              padding: '0',
+              fontWeight: '400',
+              color: 'inherit',
+              fontSize: 'inherit',
+              fontFamily: 'inherit',
+              lineHeight: 'inherit',
+            },
+            table: {
+              width: '100%',
+              tableLayout: 'auto',
+              textAlign: 'left',
+              marginTop: '2em',
+              marginBottom: '2em',
+            },
+            thead: {
+              borderBottomWidth: '1px',
+              borderBottomColor: theme('colors.gray.200'),
+            },
+            'thead th': {
+              color: theme('colors.gray.900'),
+              fontWeight: '600',
+              verticalAlign: 'bottom',
+              paddingRight: '1em',
+              paddingBottom: '0.5em',
+              paddingLeft: '1em',
+            },
+            'tbody tr': {
+              borderBottomWidth: '1px',
+              borderBottomColor: theme('colors.gray.200'),
+            },
+            'tbody tr:last-child': {
+              borderBottomWidth: '0',
+            },
+            'tbody td': {
+              verticalAlign: 'top',
+              paddingTop: '0.5em',
+              paddingRight: '1em',
+              paddingBottom: '0.5em',
+              paddingLeft: '1em',
+            },
+          },
+        },
+      }),
     },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/typography'),
+    require('@tailwindcss/forms'),
+    require('@tailwindcss/aspect-ratio'),
+    require('@tailwindcss/line-clamp'),
+  ],
+  future: {
+    hoverOnlyWhenSupported: true,
+  },
 }
 ----------------------------------------
 
@@ -1028,12 +4758,33 @@ File: package.json
   },
   "dependencies": {
     "@heroicons/react": "^2.1.5",
+    "@supabase/auth-helpers-nextjs": "^0.8.7",
+    "@supabase/auth-helpers-react": "^0.4.2",
+    "@supabase/supabase-js": "^2.45.6",
+    "@tiptap/extension-image": "^2.9.1",
+    "@tiptap/extension-link": "^2.9.1",
+    "@tiptap/react": "^2.9.1",
+    "@tiptap/starter-kit": "^2.9.1",
+    "date-fns": "^2.30.0",
     "framer-motion": "^6.5.1",
+    "lucide-react": "^0.263.1",
     "next": "12.3.4",
+    "prosemirror-commands": "^1.5.2",
+    "prosemirror-example-setup": "^1.2.3",
+    "prosemirror-model": "^1.19.3",
+    "prosemirror-schema-basic": "^1.2.2",
+    "prosemirror-schema-list": "^1.4.1",
+    "prosemirror-state": "^1.4.3",
+    "prosemirror-view": "^1.31.8",
     "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
+    "@tailwindcss/aspect-ratio": "^0.4.2",
+    "@tailwindcss/forms": "^0.5.9",
+    "@tailwindcss/line-clamp": "^0.4.4",
+    "@tailwindcss/typography": "^0.5.15",
     "@types/node": "22.7.5",
     "@types/react": "18.3.11",
     "autoprefixer": "^10.4.14",
@@ -1073,6 +4824,7 @@ To learn more about Next.js, take a look at the following resources:
 To make your next App run smoothly in production make sure to deploy your project with [Repl Deployments](https://docs.replit.com/hosting/deployments/about-deployments)!
 
 You can also produce a production build by running `npm run build` and [changing the run command](https://docs.replit.com/programming-ide/configuring-repl#run) to `npm run start`.
+# Data-Forge-Front
 
 ----------------------------------------
 
