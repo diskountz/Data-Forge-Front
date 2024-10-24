@@ -19,6 +19,7 @@
     "@tiptap/starter-kit": "^2.9.1",
     "date-fns": "^2.30.0",
     "framer-motion": "^6.5.1",
+    "lucide-react": "^0.263.1",
     "next": "12.3.4",
     "prosemirror-commands": "^1.5.2",
     "prosemirror-example-setup": "^1.2.3",
