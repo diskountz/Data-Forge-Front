@@ -11,9 +11,9 @@ export default function PostEditor({ postId }) {
   const supabase = useSupabaseClient()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [content, setContent] = useState('')
   const [categories, setCategories] = useState([])
   const [selectedCategories, setSelectedCategories] = useState([])
-  const [content, setContent] = useState('')
   const [formData, setFormData] = useState({
     title: '',
     slug: '',
@@ -80,62 +80,36 @@ export default function PostEditor({ postId }) {
     }
   }
 
-  async function generateUniqueSlug(baseSlug) {
-    try {
-      let slug = baseSlug
-      let counter = 1
-      let isUnique = false
-
-      while (!isUnique) {
-        const { data, error } = await supabase
-          .from('posts')
-          .select('slug')
-          .eq('slug', slug)
-          .single()
-
-        if (error && error.code === 'PGRST116') {
-          // No match found, slug is unique
-          isUnique = true
-        } else if (error) {
-          throw error
-        } else {
-          // Slug exists, try next counter
-          slug = `${baseSlug}-${counter}`
-          counter++
-        }
-      }
-
-      return slug
-    } catch (error) {
-      console.error('Error generating slug:', error)
-      return baseSlug // Fallback to base slug
-    }
+  function handleImageUpload(field, url) {
+    setFormData(prev => ({
+      ...prev,
+      [field]: url
+    }))
   }
 
   async function handleChange(e) {
     const { name, value, type, checked } = e.target
     const newValue = type === 'checkbox' ? checked : value
 
+    setFormData(prev => ({
+      ...prev,
+      [name]: newValue
+    }))
+
     if (name === 'title' && !postId) {
-      // Generate slug from title
       const baseSlug = value
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '')
-
-      const uniqueSlug = await generateUniqueSlug(baseSlug)
-
       setFormData(prev => ({
         ...prev,
-        [name]: value,
-        slug: uniqueSlug
-      }))
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: newValue
+        slug: baseSlug
       }))
     }
+  }
+
+  function handleContentUpdate(newContent) {
+    setContent(newContent)
   }
 
   async function handleSubmit(e) {
@@ -220,7 +194,7 @@ export default function PostEditor({ postId }) {
           if (categoriesError) throw categoriesError
         }
 
-        // Redirect to posts list
+        // Only redirect after successful save
         router.push('/admin/posts')
       }
     } catch (error) {
@@ -229,13 +203,6 @@ export default function PostEditor({ postId }) {
     } finally {
       setLoading(false)
     }
-  }
-
-  function handleImageUpload(field, url) {
-    setFormData(prev => ({
-      ...prev,
-      [field]: url
-    }))
   }
 
   return (
@@ -263,7 +230,7 @@ export default function PostEditor({ postId }) {
             <div className="prose prose-lg max-w-none">
               <RichTextEditor
                 content={content}
-                onUpdate={setContent}
+                onUpdate={handleContentUpdate}
               />
             </div>
           </div>
@@ -318,6 +285,30 @@ export default function PostEditor({ postId }) {
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
               />
             </div>
+          </div>
+
+          {/* Author Info */}
+          <div className="bg-white p-6 rounded-lg shadow-sm space-y-4">
+            <h3 className="text-lg font-medium text-gray-900">Author Information</h3>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Author Bio
+              </label>
+              <textarea
+                name="author_bio"
+                value={formData.author_bio || ''}
+                onChange={handleChange}
+                rows={3}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
+              />
+            </div>
+
+            <ImageUpload
+              currentImage={formData.author_image}
+              onUpload={(url) => handleImageUpload('author_image', url)}
+              label="Author Image"
+            />
           </div>
         </div>
 

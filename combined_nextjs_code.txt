@@ -1082,7 +1082,7 @@ File:   PostEditor.js
 import { useState, useEffect } from 'react'
 import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import { useRouter } from 'next/router'
-import { Alert, AlertDescription } from '../components/ui/alert'
+import { Alert, AlertDescription } from './ui/alert'
 import RichTextEditor from './RichTextEditor'
 import ImageUpload from './ImageUpload'
 
@@ -1099,7 +1099,15 @@ export default function PostEditor({ postId }) {
     slug: '',
     excerpt: '',
     featured_image: '',
-    status: 'draft'
+    status: 'draft',
+    meta_title: '',
+    meta_description: '',
+    canonical_url: '',
+    og_image: '',
+    social_image: '',
+    author_bio: '',
+    author_image: '',
+    is_featured: false,
   })
 
   useEffect(() => {
@@ -1117,19 +1125,10 @@ export default function PostEditor({ postId }) {
         .order('name')
 
       if (error) throw error
-      setCategories(data)
-
-      if (postId) {
-        const { data: postCategories, error: postCategoriesError } = await supabase
-          .from('posts_categories')
-          .select('category_id')
-          .eq('post_id', postId)
-
-        if (postCategoriesError) throw postCategoriesError
-        setSelectedCategories(postCategories.map(pc => pc.category_id))
-      }
+      setCategories(data || [])
     } catch (error) {
-      setError(error.message)
+      console.error('Error fetching categories:', error)
+      setError('Failed to load categories')
     }
   }
 
@@ -1137,127 +1136,85 @@ export default function PostEditor({ postId }) {
     try {
       const { data, error } = await supabase
         .from('posts')
-        .select('*')
+        .select(`
+          *,
+          posts_categories(category_id)
+        `)
         .eq('id', postId)
         .single()
 
       if (error) throw error
 
-      setFormData({
-        title: data.title,
-        slug: data.slug,
-        excerpt: data.excerpt,
-        featured_image: data.featured_image,
-        status: data.status
-      })
-      setContent(data.content)
+      if (data) {
+        setFormData({
+          ...data,
+          meta_title: data.meta_title || data.title,
+          meta_description: data.meta_description || data.excerpt
+        })
+        setContent(data.content || '')
+        setSelectedCategories(data.posts_categories.map(pc => pc.category_id))
+      }
     } catch (error) {
-      setError(error.message)
+      console.error('Error fetching post:', error)
+      setError('Failed to load post')
     }
   }
 
-  function handleChange(e) {
-    const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
+  async function generateUniqueSlug(baseSlug) {
+    try {
+      let slug = baseSlug
+      let counter = 1
+      let isUnique = false
 
-    // Auto-generate slug from title
+      while (!isUnique) {
+        const { data, error } = await supabase
+          .from('posts')
+          .select('slug')
+          .eq('slug', slug)
+          .single()
+
+        if (error && error.code === 'PGRST116') {
+          // No match found, slug is unique
+          isUnique = true
+        } else if (error) {
+          throw error
+        } else {
+          // Slug exists, try next counter
+          slug = `${baseSlug}-${counter}`
+          counter++
+        }
+      }
+
+      return slug
+    } catch (error) {
+      console.error('Error generating slug:', error)
+      return baseSlug // Fallback to base slug
+    }
+  }
+
+  async function handleChange(e) {
+    const { name, value, type, checked } = e.target
+    const newValue = type === 'checkbox' ? checked : value
+
     if (name === 'title' && !postId) {
-      const slug = value
+      // Generate slug from title
+      const baseSlug = value
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '')
-      setFormData(prev => ({ ...prev, slug }))
-    }
-  }
 
-  async function handleSubmit(e) {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
+      const uniqueSlug = await generateUniqueSlug(baseSlug)
 
-    try {
-      const postData = {
-        ...formData,
-        content,
-        author_id: (await supabase.auth.getUser()).data.user.id,
-        updated_at: new Date().toISOString()
-      }
-
-      let postId
-      if (isEditing) {
-        const { data, error } = await supabase
-          .from('posts')
-          .update(postData)
-          .eq('id', editingPostId)
-          .select()
-          .single()
-
-        if (error) throw error
-        postId = editingPostId
-      } else {
-        const { data, error } = await supabase
-          .from('posts')
-          .insert([postData])
-          .select()
-          .single()
-
-        if (error) throw error
-        postId = data.id
-      }
-
-      // Handle categories
-      if (selectedCategories.length > 0) {
-        // First, delete existing categories if editing
-        if (isEditing) {
-          await supabase
-            .from('posts_categories')
-            .delete()
-            .eq('post_id', postId)
-        }
-
-        // Insert new categories
-        const { error: categoriesError } = await supabase
-          .from('posts_categories')
-          .insert(
-            selectedCategories.map(categoryId => ({
-              post_id: postId,
-              category_id: categoryId
-            }))
-          )
-
-        if (categoriesError) throw categoriesError
-      }
-
-      router.push('/admin/posts')
-    } catch (error) {
-      setError(error.message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function updatePostCategories(postId) {
-    // Remove existing categories
-    await supabase
-      .from('posts_categories')
-      .delete()
-      .eq('post_id', postId)
-
-    // Add new categories
-    if (selectedCategories.length > 0) {
-      const categoryData = selectedCategories.map(categoryId => ({
-        post_id: postId,
-        category_id: categoryId
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        slug: uniqueSlug
       }))
-
-      const { error } = await supabase
-        .from('posts_categories')
-        .insert(categoryData)
-
-      if (error) throw error
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: newValue
+      }))
     }
   }
 
@@ -1267,12 +1224,31 @@ export default function PostEditor({ postId }) {
     setError(null)
 
     try {
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      if (userError) throw new Error('Authentication error')
+      if (!user) throw new Error('No authenticated user found')
+
+      // Prepare post data
       const postData = {
-        ...formData,
-        content,
+        title: formData.title,
+        slug: formData.slug,
+        content: content,
+        excerpt: formData.excerpt,
+        featured_image: formData.featured_image,
+        status: formData.status,
+        meta_title: formData.meta_title,
+        meta_description: formData.meta_description,
+        canonical_url: formData.canonical_url,
+        og_image: formData.og_image,
+        social_image: formData.social_image,
+        author_bio: formData.author_bio,
+        author_image: formData.author_image,
+        is_featured: formData.is_featured,
         updated_at: new Date().toISOString()
       }
 
+      let post
       if (postId) {
         // Update existing post
         const { data, error } = await supabase
@@ -1283,34 +1259,62 @@ export default function PostEditor({ postId }) {
           .single()
 
         if (error) throw error
-        await updatePostCategories(postId)
+        post = data
       } else {
         // Create new post
         const { data, error } = await supabase
           .from('posts')
           .insert([{
             ...postData,
-            author_id: (await supabase.auth.getUser()).data.user.id
+            author_id: user.id,
+            created_at: new Date().toISOString()
           }])
           .select()
           .single()
 
         if (error) throw error
-        await updatePostCategories(data.id)
+        post = data
       }
 
-      router.push('/admin/posts')
+      // Handle categories
+      if (post) {
+        if (postId) {
+          // Delete existing category relationships
+          await supabase
+            .from('posts_categories')
+            .delete()
+            .eq('post_id', postId)
+        }
+
+        if (selectedCategories.length > 0) {
+          // Insert new category relationships
+          const { error: categoriesError } = await supabase
+            .from('posts_categories')
+            .insert(
+              selectedCategories.map(categoryId => ({
+                post_id: post.id,
+                category_id: categoryId
+              }))
+            )
+
+          if (categoriesError) throw categoriesError
+        }
+
+        // Redirect to posts list
+        router.push('/admin/posts')
+      }
     } catch (error) {
+      console.error('Error saving post:', error)
       setError(error.message)
     } finally {
       setLoading(false)
     }
   }
 
-  function handleImageUpload(url) {
+  function handleImageUpload(field, url) {
     setFormData(prev => ({
       ...prev,
-      featured_image: url
+      [field]: url
     }))
   }
 
@@ -1322,131 +1326,180 @@ export default function PostEditor({ postId }) {
         </Alert>
       )}
 
-      <div>
-        <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-          Title
-        </label>
-        <input
-          type="text"
-          id="title"
-          name="title"
-          value={formData.title}
-          onChange={handleChange}
-          required
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
-        />
-      </div>
+      <div className="grid grid-cols-3 gap-6">
+        <div className="col-span-2 space-y-6">
+          {/* Main Content */}
+          <div className="space-y-4">
+            <input
+              type="text"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              placeholder="Post Title"
+              className="w-full text-4xl font-bold border-0 border-b border-gray-200 focus:ring-0 focus:border-emerald-pool"
+              required
+            />
 
-      <div>
-        <label htmlFor="slug" className="block text-sm font-medium text-gray-700">
-          Slug
-        </label>
-        <input
-          type="text"
-          id="slug"
-          name="slug"
-          value={formData.slug}
-          onChange={handleChange}
-          required
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Content
-        </label>
-        <div className="mt-1">
-          <RichTextEditor
-            initialContent={content}
-            onChange={setContent}
-          />
-        </div>
-      </div>
-
-      <div>
-        <label htmlFor="excerpt" className="block text-sm font-medium text-gray-700">
-          Excerpt
-        </label>
-        <textarea
-          id="excerpt"
-          name="excerpt"
-          value={formData.excerpt}
-          onChange={handleChange}
-          rows={3}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
-        />
-      </div>
-
-      <ImageUpload onUpload={handleImageUpload} />
-
-      {formData.featured_image && (
-        <div className="mt-2">
-          <img
-            src={formData.featured_image}
-            alt="Featured"
-            className="h-32 w-auto object-cover rounded-md"
-          />
-        </div>
-      )}
-
-      <div>
-        <label htmlFor="status" className="block text-sm font-medium text-gray-700">
-          Status
-        </label>
-        <select
-          id="status"
-          name="status"
-          value={formData.status}
-          onChange={handleChange}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
-        >
-          <option value="draft">Draft</option>
-          <option value="published">Published</option>
-          <option value="archived">Archived</option>
-        </select>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Categories
-        </label>
-        <div className="mt-2 space-y-2">
-          {categories.map(category => (
-            <label key={category.id} className="inline-flex items-center mr-4">
-              <input
-                type="checkbox"
-                checked={selectedCategories.includes(category.id)}
-                onChange={(e) => {
-                  if (e.target.checked) {
-                    setSelectedCategories([...selectedCategories, category.id])
-                  } else {
-                    setSelectedCategories(selectedCategories.filter(id => id !== category.id))
-                  }
-                }}
-                className="rounded border-gray-300 text-emerald-pool focus:ring-emerald-pool"
+            <div className="prose prose-lg max-w-none">
+              <RichTextEditor
+                content={content}
+                onUpdate={setContent}
               />
-              <span className="ml-2">{category.name}</span>
-            </label>
-          ))}
-        </div>
-      </div>
+            </div>
+          </div>
 
-      <div className="flex justify-end space-x-3">
-        <button
-          type="button"
-          onClick={() => router.push('/admin/posts')}
-          className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-pool"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={loading}
-          className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-pool hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-pool"
-        >
-          {loading ? 'Saving...' : postId ? 'Update Post' : 'Create Post'}
-        </button>
+          {/* SEO and Meta */}
+          <div className="bg-white p-6 rounded-lg shadow-sm space-y-4">
+            <h3 className="text-lg font-medium text-gray-900">SEO & Meta</h3>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Meta Title
+                <span className="text-sm text-gray-500 ml-2">
+                  ({formData.meta_title?.length || 0}/60)
+                </span>
+              </label>
+              <input
+                type="text"
+                name="meta_title"
+                value={formData.meta_title || ''}
+                onChange={handleChange}
+                maxLength={60}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Meta Description
+                <span className="text-sm text-gray-500 ml-2">
+                  ({formData.meta_description?.length || 0}/160)
+                </span>
+              </label>
+              <textarea
+                name="meta_description"
+                value={formData.meta_description || ''}
+                onChange={handleChange}
+                maxLength={160}
+                rows={3}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Canonical URL
+              </label>
+              <input
+                type="url"
+                name="canonical_url"
+                value={formData.canonical_url || ''}
+                onChange={handleChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          {/* Sidebar */}
+          <div className="bg-white p-6 rounded-lg shadow-sm space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Slug
+              </label>
+              <input
+                type="text"
+                name="slug"
+                value={formData.slug}
+                onChange={handleChange}
+                required
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Status
+              </label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
+              >
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Categories
+              </label>
+              <div className="mt-2 space-y-2">
+                {categories.map(category => (
+                  <label key={category.id} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={selectedCategories.includes(category.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedCategories([...selectedCategories, category.id])
+                        } else {
+                          setSelectedCategories(selectedCategories.filter(id => id !== category.id))
+                        }
+                      }}
+                      className="rounded border-gray-300 text-emerald-pool focus:ring-emerald-pool"
+                    />
+                    <span className="ml-2">{category.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="is_featured"
+                  checked={formData.is_featured}
+                  onChange={handleChange}
+                  className="rounded border-gray-300 text-emerald-pool focus:ring-emerald-pool"
+                />
+                <span className="ml-2">Featured Post</span>
+              </label>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow-sm space-y-4">
+            <h3 className="text-lg font-medium text-gray-900">Images</h3>
+
+            <ImageUpload
+              currentImage={formData.featured_image}
+              onUpload={(url) => handleImageUpload('featured_image', url)}
+              label="Featured Image"
+            />
+
+            <ImageUpload
+              currentImage={formData.social_image}
+              onUpload={(url) => handleImageUpload('social_image', url)}
+              label="Social Share Image"
+              hint="Recommended: 1200x630px"
+            />
+          </div>
+
+          <div className="flex space-x-4">
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-pool hover:bg-emerald-pool/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-pool disabled:opacity-50"
+            >
+              {loading ? 'Saving...' : postId ? 'Update' : 'Publish'}
+            </button>
+          </div>
+        </div>
       </div>
     </form>
   )
@@ -1755,10 +1808,6 @@ import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
 import Image from '@tiptap/extension-image'
-import Table from '@tiptap/extension-table'
-import TableRow from '@tiptap/extension-table-row'
-import TableCell from '@tiptap/extension-table-cell'
-import TableHeader from '@tiptap/extension-table-header'
 import CodeBlock from '@tiptap/extension-code-block'
 import { useSupabaseClient } from '@supabase/auth-helpers-react'
 
@@ -1867,86 +1916,119 @@ const MenuBar = ({ editor, onImageUpload }) => {
     </div>
   )
 }
+
+export default function RichTextEditor({ content = '', onUpdate }) {
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Link.configure({
+        openOnClick: false,
+      }),
+      Image,
+      CodeBlock
+    ],
+    content,
+    onUpdate: ({ editor }) => {
+      onUpdate && onUpdate(editor.getHTML())
+    },
+  })
+
+  return (
+    <div className="border rounded-lg overflow-hidden">
+      <MenuBar editor={editor} />
+      <EditorContent editor={editor} className="prose max-w-none p-4" />
+    </div>
+  )
+}
 ----------------------------------------
 
 File:   SocialShare.js
 
-// File: components/SocialShare.js
-import { useState } from 'react'
+// components/SocialShare.js
+import React from 'react';
+import { Twitter, Facebook, Linkedin, Link2, Mail } from 'lucide-react';
 
 export default function SocialShare({ url, title, description }) {
-  const [copied, setCopied] = useState(false)
+  const encodedUrl = encodeURIComponent(url);
+  const encodedTitle = encodeURIComponent(title);
+  const encodedDescription = encodeURIComponent(description);
 
-  const shareButtons = [
+  const shareData = [
     {
-      name: 'LinkedIn',
-      icon: '💼',
-      href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
-      className: 'bg-[#0077B5] hover:bg-[#006297]'
+      name: 'Twitter',
+      icon: Twitter,
+      color: '#1DA1F2',
+      hoverColor: '#1a8cd8',
+      url: `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`,
     },
     {
       name: 'Facebook',
-      icon: '📘',
-      href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
-      className: 'bg-[#1877F2] hover:bg-[#0C63D4]'
+      icon: Facebook,
+      color: '#1877F2',
+      hoverColor: '#166fe5',
+      url: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
     },
     {
-      name: 'Twitter',
-      icon: '🐦',
-      href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`,
-      className: 'bg-[#1DA1F2] hover:bg-[#0C85D0]'
+      name: 'LinkedIn',
+      icon: Linkedin,
+      color: '#0A66C2',
+      hoverColor: '#0a5ab8',
+      url: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
     },
     {
       name: 'Email',
-      icon: '📧',
-      href: `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(`${description}\n\nRead more at: ${url}`)}`,
-      className: 'bg-[#6B46C1] hover:bg-[#553C9A]'
-    }
-  ]
+      icon: Mail,
+      color: '#EA4335',
+      hoverColor: '#d33a2c',
+      url: `mailto:?subject=${encodedTitle}&body=${encodedDescription}%0A%0A${encodedUrl}`,
+    },
+  ];
 
   const copyToClipboard = async () => {
     try {
-      await navigator.clipboard.writeText(url)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      await navigator.clipboard.writeText(url);
+      // You might want to add a toast notification here
+      alert('Link copied to clipboard!');
     } catch (err) {
-      console.error('Failed to copy:', err)
+      console.error('Failed to copy:', err);
     }
-  }
+  };
 
   return (
-    <div className="rounded-lg">
-      <h3 className="text-lg font-medium text-gray-900 mb-4">Share this article</h3>
+    <div className="share-container">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">Share this article</h3>
       <div className="flex flex-wrap gap-3">
-        {shareButtons.map((button) => (
-          <a
-            key={button.name}
-            href={button.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`${button.className} p-3 rounded-full text-white transition-all duration-200 hover:scale-105 text-lg`}
-            title={`Share on ${button.name}`}
-          >
-            {button.icon}
-          </a>
-        ))}
+        {shareData.map((item) => {
+          const Icon = item.icon;
+          return (
+            <a
+              key={item.name}
+              href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center space-x-2 px-4 py-2 rounded-lg transition-colors duration-200"
+              style={{
+                backgroundColor: item.color,
+                color: 'white',
+              }}
+              onMouseOver={(e) => e.currentTarget.style.backgroundColor = item.hoverColor}
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = item.color}
+            >
+              <Icon size={20} />
+              <span>{item.name}</span>
+            </a>
+          );
+        })}
         <button
           onClick={copyToClipboard}
-          className={`p-3 rounded-full transition-all duration-200 hover:scale-105 text-lg ${
-            copied 
-              ? 'bg-green-500 hover:bg-green-600 text-white' 
-              : 'bg-gray-200 hover:bg-gray-300 text-gray-600'
-          }`}
-          title="Copy link"
+          className="inline-flex items-center justify-center space-x-2 px-4 py-2 rounded-lg bg-gray-600 hover:bg-gray-700 text-white transition-colors duration-200"
         >
-          {copied ? '✓' : '🔗'}
+          <Link2 size={20} />
+          <span>Copy Link</span>
         </button>
       </div>
-      {copied && (
-        <p className="mt-2 text-sm text-green-600">Link copied to clipboard!</p>
-      )}
     </div>
-  )
+  );
 }
 ----------------------------------------
 
@@ -2069,6 +2151,10 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables')
+}
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 ----------------------------------------
 
@@ -2150,6 +2236,10 @@ File: package.json
     "@supabase/supabase-js": "^2.45.6",
     "@tiptap/extension-image": "^2.9.1",
     "@tiptap/extension-link": "^2.9.1",
+    "@tiptap/extension-table": "^2.9.1",
+    "@tiptap/extension-table-cell": "^2.9.1",
+    "@tiptap/extension-table-header": "^2.9.1",
+    "@tiptap/extension-table-row": "^2.9.1",
     "@tiptap/react": "^2.9.1",
     "@tiptap/starter-kit": "^2.9.1",
     "date-fns": "^2.30.0",
@@ -3301,12 +3391,12 @@ export default function BlogIndex() {
 
 File:     [slug].js
 
-// File: pages/blog/[slug].js
-import { useRouter } from 'next/router'
-import { useEffect, useState } from 'react'
+// pages/blog/[slug].js
 import { createClient } from '@supabase/supabase-js'
-import { format } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 import Link from 'next/link'
+import Head from 'next/head'
+import { useRouter } from 'next/router'
 import MainLayout from '../../components/MainLayout'
 import TableOfContents from '../../components/PostEditor/TableOfContents'
 import SocialShare from '../../components/SocialShare'
@@ -3316,65 +3406,112 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 )
 
-export default function BlogPost() {
-  const router = useRouter()
-  const { slug } = router.query
-  const [post, setPost] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [relatedPosts, setRelatedPosts] = useState([])
+// Clean URL function
+const cleanUrl = (url) => {
+  if (!url) return ''
+  return url.replace(/([^:]\/)\/+/g, '$1')
+}
 
-  useEffect(() => {
-    if (slug) {
-      fetchPost()
-    }
-  }, [slug])
+export async function getStaticPaths() {
+  const { data: posts } = await supabase
+    .from('posts')
+    .select('slug')
+    .eq('status', 'published')
 
-  async function fetchPost() {
-    try {
-      const { data, error } = await supabase
-        .from('posts')
-        .select(`
-          *,
-          profiles:author_id(*),
-          posts_categories(
-            categories(*)
-          )
-        `)
-        .eq('slug', slug)
-        .eq('status', 'published')
-        .single()
-
-      if (error) throw error
-      setPost(data)
-
-      // Fetch related posts
-      if (data?.posts_categories?.length) {
-        const categoryIds = data.posts_categories.map(pc => pc.categories.id)
-        const { data: related } = await supabase
-          .from('posts')
-          .select(`
-            id,
-            title,
-            slug,
-            published_at,
-            created_at
-          `)
-          .eq('status', 'published')
-          .neq('id', data.id)
-          .in('posts_categories.categories.id', categoryIds)
-          .limit(3)
-
-        setRelatedPosts(related || [])
-      }
-    } catch (error) {
-      console.error('Error fetching post:', error)
-      router.push('/blog')
-    } finally {
-      setLoading(false)
-    }
+  return {
+    paths: posts?.map(({ slug }) => ({
+      params: { slug }
+    })) || [],
+    fallback: 'blocking'
   }
+}
 
-  if (loading) {
+export async function getStaticProps({ params }) {
+  try {
+    // Fetch main post with categories included
+    const { data: post, error } = await supabase
+      .from('posts')
+      .select(`
+        *,
+        profiles:author_id(*),
+        posts_categories!inner(
+          category_id,
+          categories(*)
+        )
+      `)
+      .eq('slug', params.slug)
+      .eq('status', 'published')
+      .single()
+
+    if (error || !post) {
+      return { notFound: true }
+    }
+
+    // Get category IDs from the current post
+    const categoryIds = post.posts_categories.map(pc => pc.category_id)
+
+    // Fetch related posts that share categories with the current post
+    const { data: relatedPosts } = await supabase
+      .from('posts')
+      .select(`
+        id,
+        title,
+        slug,
+        published_at,
+        created_at,
+        excerpt,
+        featured_image,
+        posts_categories!inner(
+          category_id,
+          categories(*)
+        )
+      `)
+      .eq('status', 'published')
+      .neq('id', post.id)
+      .in('posts_categories.category_id', categoryIds)
+      .limit(3)
+
+    // Format the post data
+    const formattedPost = {
+      ...post,
+      author_name: post.profiles?.full_name || 'Anonymous',
+      author_avatar: post.profiles?.avatar_url || '/default-avatar.png',
+      formatted_date: post.published_at || post.created_at 
+        ? format(parseISO(post.published_at || post.created_at), 'MMMM d, yyyy')
+        : '',
+    }
+
+    // Format related posts
+    const formattedRelatedPosts = (relatedPosts || []).map(post => ({
+      ...post,
+      formatted_date: post.published_at || post.created_at 
+        ? format(parseISO(post.published_at || post.created_at), 'MMM d, yyyy')
+        : ''
+    }))
+
+    // Clean up the canonical URL
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+    const canonicalUrl = cleanUrl(`${baseUrl}/blog/${params.slug}`)
+
+    return {
+      props: {
+        post: formattedPost,
+        relatedPosts: formattedRelatedPosts,
+        canonicalUrl,
+        siteTitle: process.env.NEXT_PUBLIC_SITE_NAME || 'Your Site Name'
+      },
+      revalidate: 60 * 60,
+    }
+  } catch (error) {
+    console.error('Error fetching post:', error)
+    return { notFound: true }
+  }
+}
+
+export default function BlogPost({ post, relatedPosts, canonicalUrl, siteTitle }) {
+  const router = useRouter()
+
+  if (router.isFallback) {
     return (
       <MainLayout>
         <div className="flex items-center justify-center min-h-screen">
@@ -3384,23 +3521,52 @@ export default function BlogPost() {
     )
   }
 
-  if (!post) {
-    return (
-      <MainLayout>
-        <div className="flex flex-col items-center justify-center min-h-screen">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Post not found</h2>
-          <Link href="/blog">
-            <span className="text-emerald-pool hover:text-emerald-pool/80 cursor-pointer">
-              ← Back to Blog
-            </span>
-          </Link>
-        </div>
-      </MainLayout>
-    )
+  // Prepare schema data with fallbacks for null values
+  const schemaData = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": post.title || "",
+    "image": post.featured_image ? [post.featured_image] : [],
+    "datePublished": post.published_at || post.created_at || new Date().toISOString(),
+    "dateModified": post.updated_at || post.published_at || post.created_at || new Date().toISOString(),
+    "author": {
+      "@type": "Person",
+      "name": post.author_name
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": siteTitle,
+      "logo": {
+        "@type": "ImageObject",
+        "url": cleanUrl(`${process.env.NEXT_PUBLIC_SITE_URL}/logo.png`)
+      }
+    },
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": canonicalUrl
+    }
   }
 
   return (
     <MainLayout>
+      <Head>
+        <title>{`${post.title} | ${siteTitle}`}</title>
+        <meta name="description" content={post.excerpt || ''} />
+        <meta property="og:title" content={post.title} />
+        <meta property="og:description" content={post.excerpt || ''} />
+        <meta property="og:url" content={canonicalUrl} />
+        <link rel="canonical" href={canonicalUrl} />
+        {post.featured_image && (
+          <meta property="og:image" content={post.featured_image} />
+        )}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(schemaData)
+          }}
+        />
+      </Head>
+
       <article className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="lg:grid lg:grid-cols-12 lg:gap-8">
           {/* Main content */}
@@ -3419,7 +3585,6 @@ export default function BlogPost() {
                   <Link 
                     key={categories.id} 
                     href={`/blog/category/${categories.slug}`}
-                    passHref
                   >
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-pool/10 text-emerald-pool cursor-pointer hover:bg-emerald-pool/20 transition-colors">
                       {categories.name}
@@ -3432,80 +3597,112 @@ export default function BlogPost() {
 
               <div className="flex items-center space-x-4">
                 <img
-                  src={post.profiles.avatar_url || '/default-avatar.png'}
-                  alt={post.profiles.full_name}
+                  src={post.author_avatar}
+                  alt={post.author_name}
                   className="w-12 h-12 rounded-full"
                 />
                 <div>
                   <p className="text-sm font-medium text-gray-900">
-                    {post.profiles.full_name}
+                    {post.author_name}
                   </p>
                   <p className="text-sm text-gray-500">
-                    {format(new Date(post.published_at || post.created_at), 'MMMM d, yyyy')}
+                    {post.formatted_date}
                     {post.estimated_read_time && ` · ${post.estimated_read_time} min read`}
                   </p>
                 </div>
               </div>
             </header>
 
+            {/* Share buttons at the top */}
+            <div className="mb-8">
+              <SocialShare 
+                url={canonicalUrl}
+                title={post.title}
+                description={post.excerpt || ''}
+              />
+            </div>
+
             <div 
               className="prose prose-lg max-w-none"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
 
-            {/* Social Share */}
+            {/* Share buttons at the bottom */}
             <div className="mt-12 pt-8 border-t">
               <SocialShare 
-                url={typeof window !== 'undefined' ? window.location.href : ''}
+                url={canonicalUrl}
                 title={post.title}
                 description={post.excerpt || ''}
               />
             </div>
+
+            {/* Related Posts with thumbnails */}
+            {relatedPosts.length > 0 && (
+              <div className="mt-12 pt-8 border-t">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Related Articles</h2>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {relatedPosts.map(post => (
+                    <Link key={post.id} href={`/blog/${post.slug}`}>
+                      <a className="group">
+                        <div className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200">
+                          {post.featured_image ? (
+                            <div className="aspect-w-16 aspect-h-9">
+                              <img
+                                src={post.featured_image}
+                                alt={post.title}
+                                className="w-full h-48 object-cover"
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-full h-48 bg-gray-100 flex items-center justify-center">
+                              <span className="text-gray-400">No image</span>
+                            </div>
+                          )}
+                          <div className="p-6">
+                            <h3 className="text-lg font-semibold text-gray-900 group-hover:text-emerald-pool transition-colors mb-2 line-clamp-2">
+                              {post.title}
+                            </h3>
+                            {post.excerpt && (
+                              <p className="text-gray-600 text-sm mb-2 line-clamp-2">
+                                {post.excerpt}
+                              </p>
+                            )}
+                            <p className="text-sm text-gray-500">
+                              {post.formatted_date}
+                            </p>
+                          </div>
+                        </div>
+                      </a>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Sidebar */}
           <aside className="hidden lg:block lg:col-span-4">
             <div className="sticky top-8 space-y-8">
+              {/* Table of Contents */}
               <TableOfContents content={post.content} />
 
               {/* Author Bio */}
-              {post.profiles.bio && (
+              {post.profiles?.bio && (
                 <div className="bg-white shadow-sm rounded-lg p-6 mt-8">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">About the Author</h3>
                   <div className="flex items-start space-x-4">
                     <img
-                      src={post.profiles.avatar_url || '/default-avatar.png'}
-                      alt={post.profiles.full_name}
+                      src={post.author_avatar}
+                      alt={post.author_name}
                       className="w-16 h-16 rounded-full"
                     />
                     <div>
-                      <h4 className="font-medium text-gray-900">{post.profiles.full_name}</h4>
+                      <h4 className="font-medium text-gray-900">{post.author_name}</h4>
                       {post.profiles.title && (
                         <p className="text-sm text-gray-500 mb-2">{post.profiles.title}</p>
                       )}
                       <p className="text-gray-600 text-sm">{post.profiles.bio}</p>
                     </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Related Posts */}
-              {relatedPosts.length > 0 && (
-                <div className="bg-white shadow-sm rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Related Articles</h3>
-                  <div className="space-y-4">
-                    {relatedPosts.map(post => (
-                      <Link key={post.id} href={`/blog/${post.slug}`} passHref>
-                        <a className="block group">
-                          <h4 className="text-base font-medium text-gray-900 group-hover:text-emerald-pool transition-colors">
-                            {post.title}
-                          </h4>
-                          <p className="text-sm text-gray-500 mt-1">
-                            {format(new Date(post.published_at || post.created_at), 'MMM d, yyyy')}
-                          </p>
-                        </a>
-                      </Link>
-                    ))}
                   </div>
                 </div>
               )}
@@ -4763,6 +4960,10 @@ File: package.json
     "@supabase/supabase-js": "^2.45.6",
     "@tiptap/extension-image": "^2.9.1",
     "@tiptap/extension-link": "^2.9.1",
+    "@tiptap/extension-table": "^2.9.1",
+    "@tiptap/extension-table-cell": "^2.9.1",
+    "@tiptap/extension-table-header": "^2.9.1",
+    "@tiptap/extension-table-row": "^2.9.1",
     "@tiptap/react": "^2.9.1",
     "@tiptap/starter-kit": "^2.9.1",
     "date-fns": "^2.30.0",
