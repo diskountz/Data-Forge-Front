@@ -1,77 +1,86 @@
-// File: components/SocialShare.js
-import { useState } from 'react'
+// components/SocialShare.js
+import React from 'react';
+import { Twitter, Facebook, Linkedin, Link2, Mail } from 'lucide-react';
 
 export default function SocialShare({ url, title, description }) {
-  const [copied, setCopied] = useState(false)
+  const encodedUrl = encodeURIComponent(url);
+  const encodedTitle = encodeURIComponent(title);
+  const encodedDescription = encodeURIComponent(description);
 
-  const shareButtons = [
+  const shareData = [
     {
-      name: 'LinkedIn',
-      icon: '💼',
-      href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
-      className: 'bg-[#0077B5] hover:bg-[#006297]'
+      name: 'Twitter',
+      icon: Twitter,
+      color: '#1DA1F2',
+      hoverColor: '#1a8cd8',
+      url: `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`,
     },
     {
       name: 'Facebook',
-      icon: '📘',
-      href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
-      className: 'bg-[#1877F2] hover:bg-[#0C63D4]'
+      icon: Facebook,
+      color: '#1877F2',
+      hoverColor: '#166fe5',
+      url: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
     },
     {
-      name: 'Twitter',
-      icon: '🐦',
-      href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`,
-      className: 'bg-[#1DA1F2] hover:bg-[#0C85D0]'
+      name: 'LinkedIn',
+      icon: Linkedin,
+      color: '#0A66C2',
+      hoverColor: '#0a5ab8',
+      url: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
     },
     {
       name: 'Email',
-      icon: '📧',
-      href: `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(`${description}\n\nRead more at: ${url}`)}`,
-      className: 'bg-[#6B46C1] hover:bg-[#553C9A]'
-    }
-  ]
+      icon: Mail,
+      color: '#EA4335',
+      hoverColor: '#d33a2c',
+      url: `mailto:?subject=${encodedTitle}&body=${encodedDescription}%0A%0A${encodedUrl}`,
+    },
+  ];
 
   const copyToClipboard = async () => {
     try {
-      await navigator.clipboard.writeText(url)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      await navigator.clipboard.writeText(url);
+      // You might want to add a toast notification here
+      alert('Link copied to clipboard!');
     } catch (err) {
-      console.error('Failed to copy:', err)
+      console.error('Failed to copy:', err);
     }
-  }
+  };
 
   return (
-    <div className="rounded-lg">
-      <h3 className="text-lg font-medium text-gray-900 mb-4">Share this article</h3>
+    <div className="share-container">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">Share this article</h3>
       <div className="flex flex-wrap gap-3">
-        {shareButtons.map((button) => (
-          <a
-            key={button.name}
-            href={button.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`${button.className} p-3 rounded-full text-white transition-all duration-200 hover:scale-105 text-lg`}
-            title={`Share on ${button.name}`}
-          >
-            {button.icon}
-          </a>
-        ))}
+        {shareData.map((item) => {
+          const Icon = item.icon;
+          return (
+            <a
+              key={item.name}
+              href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center space-x-2 px-4 py-2 rounded-lg transition-colors duration-200"
+              style={{
+                backgroundColor: item.color,
+                color: 'white',
+              }}
+              onMouseOver={(e) => e.currentTarget.style.backgroundColor = item.hoverColor}
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = item.color}
+            >
+              <Icon size={20} />
+              <span>{item.name}</span>
+            </a>
+          );
+        })}
         <button
           onClick={copyToClipboard}
-          className={`p-3 rounded-full transition-all duration-200 hover:scale-105 text-lg ${
-            copied 
-              ? 'bg-green-500 hover:bg-green-600 text-white' 
-              : 'bg-gray-200 hover:bg-gray-300 text-gray-600'
-          }`}
-          title="Copy link"
+          className="inline-flex items-center justify-center space-x-2 px-4 py-2 rounded-lg bg-gray-600 hover:bg-gray-700 text-white transition-colors duration-200"
         >
-          {copied ? '✓' : '🔗'}
+          <Link2 size={20} />
+          <span>Copy Link</span>
         </button>
       </div>
-      {copied && (
-        <p className="mt-2 text-sm text-green-600">Link copied to clipboard!</p>
-      )}
     </div>
-  )
+  );
 }

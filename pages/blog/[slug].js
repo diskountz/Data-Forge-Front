@@ -1,9 +1,9 @@
-// File: pages/blog/[slug].js
-import { useRouter } from 'next/router'
-import { useEffect, useState } from 'react'
+// pages/blog/[slug].js
 import { createClient } from '@supabase/supabase-js'
-import { format } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 import Link from 'next/link'
+import Head from 'next/head'
+import { useRouter } from 'next/router'
 import MainLayout from '../../components/MainLayout'
 import TableOfContents from '../../components/PostEditor/TableOfContents'
 import SocialShare from '../../components/SocialShare'
@@ -13,65 +13,112 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 )
 
-export default function BlogPost() {
-  const router = useRouter()
-  const { slug } = router.query
-  const [post, setPost] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [relatedPosts, setRelatedPosts] = useState([])
+// Clean URL function
+const cleanUrl = (url) => {
+  if (!url) return ''
+  return url.replace(/([^:]\/)\/+/g, '$1')
+}
 
-  useEffect(() => {
-    if (slug) {
-      fetchPost()
-    }
-  }, [slug])
+export async function getStaticPaths() {
+  const { data: posts } = await supabase
+    .from('posts')
+    .select('slug')
+    .eq('status', 'published')
 
-  async function fetchPost() {
-    try {
-      const { data, error } = await supabase
-        .from('posts')
-        .select(`
-          *,
-          profiles:author_id(*),
-          posts_categories(
-            categories(*)
-          )
-        `)
-        .eq('slug', slug)
-        .eq('status', 'published')
-        .single()
-
-      if (error) throw error
-      setPost(data)
-
-      // Fetch related posts
-      if (data?.posts_categories?.length) {
-        const categoryIds = data.posts_categories.map(pc => pc.categories.id)
-        const { data: related } = await supabase
-          .from('posts')
-          .select(`
-            id,
-            title,
-            slug,
-            published_at,
-            created_at
-          `)
-          .eq('status', 'published')
-          .neq('id', data.id)
-          .in('posts_categories.categories.id', categoryIds)
-          .limit(3)
-
-        setRelatedPosts(related || [])
-      }
-    } catch (error) {
-      console.error('Error fetching post:', error)
-      router.push('/blog')
-    } finally {
-      setLoading(false)
-    }
+  return {
+    paths: posts?.map(({ slug }) => ({
+      params: { slug }
+    })) || [],
+    fallback: 'blocking'
   }
+}
 
-  if (loading) {
+export async function getStaticProps({ params }) {
+  try {
+    // Fetch main post with categories included
+    const { data: post, error } = await supabase
+      .from('posts')
+      .select(`
+        *,
+        profiles:author_id(*),
+        posts_categories!inner(
+          category_id,
+          categories(*)
+        )
+      `)
+      .eq('slug', params.slug)
+      .eq('status', 'published')
+      .single()
+
+    if (error || !post) {
+      return { notFound: true }
+    }
+
+    // Get category IDs from the current post
+    const categoryIds = post.posts_categories.map(pc => pc.category_id)
+
+    // Fetch related posts that share categories with the current post
+    const { data: relatedPosts } = await supabase
+      .from('posts')
+      .select(`
+        id,
+        title,
+        slug,
+        published_at,
+        created_at,
+        excerpt,
+        featured_image,
+        posts_categories!inner(
+          category_id,
+          categories(*)
+        )
+      `)
+      .eq('status', 'published')
+      .neq('id', post.id)
+      .in('posts_categories.category_id', categoryIds)
+      .limit(3)
+
+    // Format the post data
+    const formattedPost = {
+      ...post,
+      author_name: post.profiles?.full_name || 'Anonymous',
+      author_avatar: post.profiles?.avatar_url || '/default-avatar.png',
+      formatted_date: post.published_at || post.created_at 
+        ? format(parseISO(post.published_at || post.created_at), 'MMMM d, yyyy')
+        : '',
+    }
+
+    // Format related posts
+    const formattedRelatedPosts = (relatedPosts || []).map(post => ({
+      ...post,
+      formatted_date: post.published_at || post.created_at 
+        ? format(parseISO(post.published_at || post.created_at), 'MMM d, yyyy')
+        : ''
+    }))
+
+    // Clean up the canonical URL
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+    const canonicalUrl = cleanUrl(`${baseUrl}/blog/${params.slug}`)
+
+    return {
+      props: {
+        post: formattedPost,
+        relatedPosts: formattedRelatedPosts,
+        canonicalUrl,
+        siteTitle: process.env.NEXT_PUBLIC_SITE_NAME || 'Your Site Name'
+      },
+      revalidate: 60 * 60,
+    }
+  } catch (error) {
+    console.error('Error fetching post:', error)
+    return { notFound: true }
+  }
+}
+
+export default function BlogPost({ post, relatedPosts, canonicalUrl, siteTitle }) {
+  const router = useRouter()
+
+  if (router.isFallback) {
     return (
       <MainLayout>
         <div className="flex items-center justify-center min-h-screen">
@@ -81,23 +128,52 @@ export default function BlogPost() {
     )
   }
 
-  if (!post) {
-    return (
-      <MainLayout>
-        <div className="flex flex-col items-center justify-center min-h-screen">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Post not found</h2>
-          <Link href="/blog">
-            <span className="text-emerald-pool hover:text-emerald-pool/80 cursor-pointer">
-              ← Back to Blog
-            </span>
-          </Link>
-        </div>
-      </MainLayout>
-    )
+  // Prepare schema data with fallbacks for null values
+  const schemaData = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": post.title || "",
+    "image": post.featured_image ? [post.featured_image] : [],
+    "datePublished": post.published_at || post.created_at || new Date().toISOString(),
+    "dateModified": post.updated_at || post.published_at || post.created_at || new Date().toISOString(),
+    "author": {
+      "@type": "Person",
+      "name": post.author_name
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": siteTitle,
+      "logo": {
+        "@type": "ImageObject",
+        "url": cleanUrl(`${process.env.NEXT_PUBLIC_SITE_URL}/logo.png`)
+      }
+    },
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": canonicalUrl
+    }
   }
 
   return (
     <MainLayout>
+      <Head>
+        <title>{`${post.title} | ${siteTitle}`}</title>
+        <meta name="description" content={post.excerpt || ''} />
+        <meta property="og:title" content={post.title} />
+        <meta property="og:description" content={post.excerpt || ''} />
+        <meta property="og:url" content={canonicalUrl} />
+        <link rel="canonical" href={canonicalUrl} />
+        {post.featured_image && (
+          <meta property="og:image" content={post.featured_image} />
+        )}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(schemaData)
+          }}
+        />
+      </Head>
+
       <article className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="lg:grid lg:grid-cols-12 lg:gap-8">
           {/* Main content */}
@@ -116,7 +192,6 @@ export default function BlogPost() {
                   <Link 
                     key={categories.id} 
                     href={`/blog/category/${categories.slug}`}
-                    passHref
                   >
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-pool/10 text-emerald-pool cursor-pointer hover:bg-emerald-pool/20 transition-colors">
                       {categories.name}
@@ -129,80 +204,112 @@ export default function BlogPost() {
 
               <div className="flex items-center space-x-4">
                 <img
-                  src={post.profiles.avatar_url || '/default-avatar.png'}
-                  alt={post.profiles.full_name}
+                  src={post.author_avatar}
+                  alt={post.author_name}
                   className="w-12 h-12 rounded-full"
                 />
                 <div>
                   <p className="text-sm font-medium text-gray-900">
-                    {post.profiles.full_name}
+                    {post.author_name}
                   </p>
                   <p className="text-sm text-gray-500">
-                    {format(new Date(post.published_at || post.created_at), 'MMMM d, yyyy')}
+                    {post.formatted_date}
                     {post.estimated_read_time && ` · ${post.estimated_read_time} min read`}
                   </p>
                 </div>
               </div>
             </header>
 
+            {/* Share buttons at the top */}
+            <div className="mb-8">
+              <SocialShare 
+                url={canonicalUrl}
+                title={post.title}
+                description={post.excerpt || ''}
+              />
+            </div>
+
             <div 
               className="prose prose-lg max-w-none"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
 
-            {/* Social Share */}
+            {/* Share buttons at the bottom */}
             <div className="mt-12 pt-8 border-t">
               <SocialShare 
-                url={typeof window !== 'undefined' ? window.location.href : ''}
+                url={canonicalUrl}
                 title={post.title}
                 description={post.excerpt || ''}
               />
             </div>
+
+            {/* Related Posts with thumbnails */}
+            {relatedPosts.length > 0 && (
+              <div className="mt-12 pt-8 border-t">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Related Articles</h2>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {relatedPosts.map(post => (
+                    <Link key={post.id} href={`/blog/${post.slug}`}>
+                      <a className="group">
+                        <div className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200">
+                          {post.featured_image ? (
+                            <div className="aspect-w-16 aspect-h-9">
+                              <img
+                                src={post.featured_image}
+                                alt={post.title}
+                                className="w-full h-48 object-cover"
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-full h-48 bg-gray-100 flex items-center justify-center">
+                              <span className="text-gray-400">No image</span>
+                            </div>
+                          )}
+                          <div className="p-6">
+                            <h3 className="text-lg font-semibold text-gray-900 group-hover:text-emerald-pool transition-colors mb-2 line-clamp-2">
+                              {post.title}
+                            </h3>
+                            {post.excerpt && (
+                              <p className="text-gray-600 text-sm mb-2 line-clamp-2">
+                                {post.excerpt}
+                              </p>
+                            )}
+                            <p className="text-sm text-gray-500">
+                              {post.formatted_date}
+                            </p>
+                          </div>
+                        </div>
+                      </a>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Sidebar */}
           <aside className="hidden lg:block lg:col-span-4">
             <div className="sticky top-8 space-y-8">
+              {/* Table of Contents */}
               <TableOfContents content={post.content} />
 
               {/* Author Bio */}
-              {post.profiles.bio && (
+              {post.profiles?.bio && (
                 <div className="bg-white shadow-sm rounded-lg p-6 mt-8">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">About the Author</h3>
                   <div className="flex items-start space-x-4">
                     <img
-                      src={post.profiles.avatar_url || '/default-avatar.png'}
-                      alt={post.profiles.full_name}
+                      src={post.author_avatar}
+                      alt={post.author_name}
                       className="w-16 h-16 rounded-full"
                     />
                     <div>
-                      <h4 className="font-medium text-gray-900">{post.profiles.full_name}</h4>
+                      <h4 className="font-medium text-gray-900">{post.author_name}</h4>
                       {post.profiles.title && (
                         <p className="text-sm text-gray-500 mb-2">{post.profiles.title}</p>
                       )}
                       <p className="text-gray-600 text-sm">{post.profiles.bio}</p>
                     </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Related Posts */}
-              {relatedPosts.length > 0 && (
-                <div className="bg-white shadow-sm rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Related Articles</h3>
-                  <div className="space-y-4">
-                    {relatedPosts.map(post => (
-                      <Link key={post.id} href={`/blog/${post.slug}`} passHref>
-                        <a className="block group">
-                          <h4 className="text-base font-medium text-gray-900 group-hover:text-emerald-pool transition-colors">
-                            {post.title}
-                          </h4>
-                          <p className="text-sm text-gray-500 mt-1">
-                            {format(new Date(post.published_at || post.created_at), 'MMM d, yyyy')}
-                          </p>
-                        </a>
-                      </Link>
-                    ))}
                   </div>
                 </div>
               )}
