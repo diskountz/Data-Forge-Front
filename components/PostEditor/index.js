@@ -1,20 +1,15 @@
-// File: components/PostEditor/index.js
 import { useState, useEffect } from 'react'
 import { useSupabaseClient } from '@supabase/auth-helpers-react'
 import { useRouter } from 'next/router'
-import { Alert, AlertDescription } from '../../components/ui/alert'
-import RichTextEditor from './RichTextEditor'
-import ImageUpload from './ImageUpload'
-import TableOfContents from './TableOfContents'
-import PostPreview from './PostPreview'
-import { extractTableOfContents, calculateReadTime } from './utils'
+import { Alert, AlertDescription } from '../ui/alert'
+import RichTextEditor from '../RichTextEditor'
+import ImageUpload from '../ImageUpload'
 
 export default function PostEditor({ postId }) {
   const router = useRouter()
   const supabase = useSupabaseClient()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [isPreview, setIsPreview] = useState(false)
   const [content, setContent] = useState('')
   const [categories, setCategories] = useState([])
   const [selectedCategories, setSelectedCategories] = useState([])
@@ -23,17 +18,14 @@ export default function PostEditor({ postId }) {
     slug: '',
     excerpt: '',
     featured_image: '',
+    featured_image_alt: '',
     status: 'draft',
     meta_title: '',
     meta_description: '',
     canonical_url: '',
-    og_image: '',
     social_image: '',
-    author_bio: '',
-    author_image: '',
+    social_image_alt: '',
     is_featured: false,
-    table_of_contents: [],
-    estimated_read_time: 0
   })
 
   useEffect(() => {
@@ -42,17 +34,6 @@ export default function PostEditor({ postId }) {
       fetchPost()
     }
   }, [postId])
-
-  useEffect(() => {
-    // Update table of contents when content changes
-    const toc = extractTableOfContents(content)
-    const readTime = calculateReadTime(content)
-    setFormData(prev => ({
-      ...prev,
-      table_of_contents: toc,
-      estimated_read_time: readTime
-    }))
-  }, [content])
 
   async function fetchCategories() {
     try {
@@ -65,6 +46,7 @@ export default function PostEditor({ postId }) {
       setCategories(data || [])
     } catch (error) {
       console.error('Error fetching categories:', error)
+      setError('Failed to load categories')
     }
   }
 
@@ -81,33 +63,53 @@ export default function PostEditor({ postId }) {
 
       if (error) throw error
 
-      setFormData({
-        ...data,
-        meta_title: data.meta_title || data.title,
-        meta_description: data.meta_description || data.excerpt
-      })
-      setContent(data.content)
-      setSelectedCategories(data.posts_categories.map(pc => pc.category_id))
+      if (data) {
+        setFormData({
+          ...data,
+          meta_title: data.meta_title || data.title,
+          meta_description: data.meta_description || data.excerpt,
+          featured_image_alt: data.featured_image_alt || '',
+          social_image_alt: data.social_image_alt || ''
+        })
+        setContent(data.content || '')
+        setSelectedCategories(data.posts_categories.map(pc => pc.category_id))
+      }
     } catch (error) {
-      setError(error.message)
+      console.error('Error fetching post:', error)
+      setError('Failed to load post')
     }
   }
 
-  function handleChange(e) {
-    const { name, value, type, checked } = e.target
+  function handleImageUpload(field, url) {
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [field]: url
+    }))
+  }
+
+  async function handleChange(e) {
+    const { name, value, type, checked } = e.target
+    const newValue = type === 'checkbox' ? checked : value
+
+    setFormData(prev => ({
+      ...prev,
+      [name]: newValue
     }))
 
-    // Auto-generate slug from title
     if (name === 'title' && !postId) {
-      const slug = value
+      const baseSlug = value
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '')
-      setFormData(prev => ({ ...prev, slug }))
+      setFormData(prev => ({
+        ...prev,
+        slug: baseSlug
+      }))
     }
+  }
+
+  function handleContentUpdate(newContent) {
+    setContent(newContent)
   }
 
   async function handleSubmit(e) {
@@ -116,53 +118,93 @@ export default function PostEditor({ postId }) {
     setError(null)
 
     try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      if (userError) throw new Error('Authentication error')
+      if (!user) throw new Error('No authenticated user found')
+
       const postData = {
-        ...formData,
-        content,
+        title: formData.title,
+        slug: formData.slug,
+        content: content,
+        excerpt: formData.excerpt,
+        featured_image: formData.featured_image,
+        featured_image_alt: formData.featured_image_alt,
+        status: formData.status,
+        meta_title: formData.meta_title,
+        meta_description: formData.meta_description,
+        canonical_url: formData.canonical_url,
+        social_image: formData.social_image,
+        social_image_alt: formData.social_image_alt,
+        is_featured: formData.is_featured,
         updated_at: new Date().toISOString()
       }
 
-      let postId
-      if (postData.id) {
+      let post
+      if (postId) {
         const { data, error } = await supabase
           .from('posts')
           .update(postData)
-          .eq('id', postData.id)
+          .eq('id', postId)
           .select()
           .single()
 
         if (error) throw error
-        postId = postData.id
+        post = data
       } else {
         const { data, error } = await supabase
           .from('posts')
           .insert([{
             ...postData,
-            author_id: (await supabase.auth.getUser()).data.user.id
+            author_id: user.id,
+            created_at: new Date().toISOString()
           }])
           .select()
           .single()
 
         if (error) throw error
-        postId = data.id
+        post = data
       }
 
-      // Handle categories
-      if (selectedCategories.length > 0) {
-        // Remove existing categories if updating
-        if (postData.id) {
+      if (post) {
+        if (postId) {
           await supabase
             .from('posts_categories')
             .delete()
             .eq('post_id', postId)
         }
 
-        // Insert new categories
+        let categoriesToAssign = selectedCategories
+
+        if (categoriesToAssign.length === 0) {
+          const { data: generalCat, error: findError } = await supabase
+            .from('categories')
+            .select('id')
+            .eq('slug', 'general')
+            .single()
+
+          if (findError || !generalCat) {
+            const { data: newCat, error: createError } = await supabase
+              .from('categories')
+              .insert([{
+                name: 'General',
+                slug: 'general',
+                description: 'General category for uncategorized posts'
+              }])
+              .select()
+              .single()
+
+            if (createError) throw createError
+            categoriesToAssign = [newCat.id]
+          } else {
+            categoriesToAssign = [generalCat.id]
+          }
+        }
+
         const { error: categoriesError } = await supabase
           .from('posts_categories')
           .insert(
-            selectedCategories.map(categoryId => ({
-              post_id: postId,
+            categoriesToAssign.map(categoryId => ({
+              post_id: post.id,
               category_id: categoryId
             }))
           )
@@ -172,23 +214,11 @@ export default function PostEditor({ postId }) {
 
       router.push('/admin/posts')
     } catch (error) {
+      console.error('Error saving post:', error)
       setError(error.message)
     } finally {
       setLoading(false)
     }
-  }
-
-  if (isPreview) {
-    return (
-      <PostPreview
-        post={{
-          ...formData,
-          content,
-          author: { bio: formData.author_bio, image: formData.author_image }
-        }}
-        onBack={() => setIsPreview(false)}
-      />
-    )
   }
 
   return (
@@ -209,14 +239,38 @@ export default function PostEditor({ postId }) {
               value={formData.title}
               onChange={handleChange}
               placeholder="Post Title"
-              className="w-full text-4xl font-bold border-0 border-b border-gray-200 focus:ring-0 focus:border-emerald-pool"
+              className="w-full text-4xl font-bold border-0 border-b border-gray-200 focus:ring-0 focus:border-emerald-pool break-words"
+              style={{ wordWrap: 'break-word', overflowWrap: 'break-word' }}
               required
             />
 
+            {/* Featured Image Section */}
+            <div className="bg-white p-6 rounded-lg shadow-sm space-y-4">
+              <h3 className="text-lg font-medium text-gray-900">Featured Image</h3>
+              <ImageUpload
+                currentImage={formData.featured_image}
+                onUpload={(url) => handleImageUpload('featured_image', url)}
+                label="Featured Image"
+              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Alt Text
+                </label>
+                <input
+                  type="text"
+                  name="featured_image_alt"
+                  value={formData.featured_image_alt}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
+                  placeholder="Describe the image for accessibility"
+                />
+              </div>
+            </div>
+
             <div className="prose prose-lg max-w-none">
               <RichTextEditor
-                initialContent={content}
-                onChange={setContent}
+                content={content}
+                onUpdate={handleContentUpdate}
               />
             </div>
           </div>
@@ -229,15 +283,15 @@ export default function PostEditor({ postId }) {
               <label className="block text-sm font-medium text-gray-700">
                 Meta Title
                 <span className="text-sm text-gray-500 ml-2">
-                  ({formData.meta_title.length}/60)
+                  ({formData.meta_title?.length || 0}/70)
                 </span>
               </label>
               <input
                 type="text"
                 name="meta_title"
-                value={formData.meta_title}
+                value={formData.meta_title || ''}
                 onChange={handleChange}
-                maxLength={60}
+                maxLength={70}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
               />
             </div>
@@ -246,12 +300,12 @@ export default function PostEditor({ postId }) {
               <label className="block text-sm font-medium text-gray-700">
                 Meta Description
                 <span className="text-sm text-gray-500 ml-2">
-                  ({formData.meta_description.length}/160)
+                  ({formData.meta_description?.length || 0}/160)
                 </span>
               </label>
               <textarea
                 name="meta_description"
-                value={formData.meta_description}
+                value={formData.meta_description || ''}
                 onChange={handleChange}
                 maxLength={160}
                 rows={3}
@@ -266,41 +320,55 @@ export default function PostEditor({ postId }) {
               <input
                 type="url"
                 name="canonical_url"
-                value={formData.canonical_url}
+                value={formData.canonical_url || ''}
                 onChange={handleChange}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
               />
             </div>
           </div>
 
-          {/* Author Info */}
+          {/* Social Share Image */}
           <div className="bg-white p-6 rounded-lg shadow-sm space-y-4">
-            <h3 className="text-lg font-medium text-gray-900">Author Information</h3>
-
+            <h3 className="text-lg font-medium text-gray-900">Social Share Image</h3>
+            <ImageUpload
+              currentImage={formData.social_image}
+              onUpload={(url) => handleImageUpload('social_image', url)}
+              label="Social Share Image"
+              hint="Recommended: 1200x630px"
+            />
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Author Bio
+                Social Image Alt Text
               </label>
-              <textarea
-                name="author_bio"
-                value={formData.author_bio}
+              <input
+                type="text"
+                name="social_image_alt"
+                value={formData.social_image_alt}
                 onChange={handleChange}
-                rows={3}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
+                placeholder="Describe the social share image for accessibility"
               />
             </div>
-
-            <ImageUpload
-              currentImage={formData.author_image}
-              onUpload={(url) => setFormData(prev => ({ ...prev, author_image: url }))}
-              label="Author Image"
-            />
           </div>
         </div>
 
         <div className="space-y-6">
           {/* Sidebar */}
           <div className="bg-white p-6 rounded-lg shadow-sm space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Slug
+              </label>
+              <input
+                type="text"
+                name="slug"
+                value={formData.slug}
+                onChange={handleChange}
+                required
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
+              />
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Status
@@ -354,43 +422,13 @@ export default function PostEditor({ postId }) {
                 <span className="ml-2">Featured Post</span>
               </label>
             </div>
-
-            <div className="border-t pt-4">
-              <p className="text-sm text-gray-500">
-                Estimated read time: {formData.estimated_read_time} min
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow-sm space-y-4">
-            <h3 className="text-lg font-medium text-gray-900">Images</h3>
-
-            <ImageUpload
-              currentImage={formData.featured_image}
-              onUpload={(url) => setFormData(prev => ({ ...prev, featured_image: url }))}
-              label="Featured Image"
-            />
-
-            <ImageUpload
-              currentImage={formData.social_image}
-              onUpload={(url) => setFormData(prev => ({ ...prev, social_image: url }))}
-              label="Social Share Image"
-              hint="Recommended: 1200x630px"
-            />
           </div>
 
           <div className="flex space-x-4">
             <button
-              type="button"
-              onClick={() => setIsPreview(true)}
-              className="flex-1 py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-pool"
-            >
-              Preview
-            </button>
-            <button
               type="submit"
               disabled={loading}
-              className="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-pool hover:bg-emerald-pool/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-pool"
+              className="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-pool hover:bg-emerald-pool/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-pool disabled:opacity-50"
             >
               {loading ? 'Saving...' : postId ? 'Update' : 'Publish'}
             </button>
