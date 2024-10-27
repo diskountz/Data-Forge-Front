@@ -1,6 +1,8 @@
 // File: components/Header.js
 import Link from 'next/link';
 import Image from 'next/image';
+import { motion } from 'framer-motion';
+import { ArrowRight } from 'lucide-react';  // Add this import
 
 export default function Header() {
   return (

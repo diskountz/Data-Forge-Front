@@ -1,4 +1,3 @@
-// File: tailwind.config.js
 const defaultTheme = require('tailwindcss/defaultTheme')
 
 module.exports = {
@@ -14,183 +13,21 @@ module.exports = {
         'puturple': '#B2A7D1',
         'emerald-pool': '#346B6D',
         'napoleon': '#4A4A4A',
+        'notion': {
+          default: '#37352F',
+          gray: '#787774',
+          hover: '#F7F7F7',
+          border: '#E6E6E6',
+        }
       },
       fontFamily: {
         sans: ['Inter', ...defaultTheme.fontFamily.sans],
         display: ['Inter', ...defaultTheme.fontFamily.sans],
-        mono: ['JetBrains Mono', ...defaultTheme.fontFamily.mono],
       },
-      typography: (theme) => ({
-        DEFAULT: {
-          css: {
-            color: theme('colors.gray.700'),
-            maxWidth: '100ch',
-            h1: {
-              fontSize: '2.5rem',
-              marginTop: '2rem',
-              marginBottom: '1rem',
-              lineHeight: '1.2',
-              fontWeight: '700',
-              color: theme('colors.gray.900'),
-              letterSpacing: '-0.025em',
-            },
-            h2: {
-              fontSize: '1.875rem',
-              marginTop: '2.5rem',
-              marginBottom: '1rem',
-              lineHeight: '1.3',
-              fontWeight: '700',
-              color: theme('colors.gray.900'),
-              letterSpacing: '-0.025em',
-            },
-            h3: {
-              fontSize: '1.5rem',
-              marginTop: '2rem',
-              marginBottom: '0.75rem',
-              lineHeight: '1.4',
-              fontWeight: '600',
-              color: theme('colors.gray.900'),
-            },
-            h4: {
-              fontSize: '1.25rem',
-              marginTop: '1.75rem',
-              marginBottom: '0.5rem',
-              lineHeight: '1.5',
-              fontWeight: '600',
-              color: theme('colors.gray.900'),
-            },
-            p: {
-              marginTop: '1.25rem',
-              marginBottom: '1.25rem',
-              lineHeight: '1.75',
-            },
-            'ul > li': {
-              position: 'relative',
-              paddingLeft: '1.75rem',
-              marginTop: '0.5rem',
-              marginBottom: '0.5rem',
-            },
-            'ul > li::before': {
-              content: '""',
-              width: '0.5rem',
-              height: '0.5rem',
-              position: 'absolute',
-              borderRadius: '50%',
-              backgroundColor: theme('colors.emerald-pool'),
-              left: 0,
-              top: '0.6875em',
-            },
-            'ol > li': {
-              position: 'relative',
-              paddingLeft: '1.75rem',
-              marginTop: '0.5rem',
-              marginBottom: '0.5rem',
-            },
-            a: {
-              color: theme('colors.emerald-pool'),
-              textDecoration: 'none',
-              fontWeight: '500',
-              '&:hover': {
-                textDecoration: 'underline',
-                textDecorationThickness: '2px',
-                textUnderlineOffset: '2px',
-              },
-            },
-            blockquote: {
-              fontWeight: '500',
-              fontStyle: 'italic',
-              color: theme('colors.gray.900'),
-              borderLeftWidth: '0.25rem',
-              borderLeftColor: theme('colors.emerald-pool'),
-              quotes: '"\\201C""\\201D""\\2018""\\2019"',
-              marginTop: '2rem',
-              marginBottom: '2rem',
-              paddingLeft: '1.5rem',
-            },
-            'blockquote p:first-of-type::before': {
-              content: 'open-quote',
-            },
-            'blockquote p:last-of-type::after': {
-              content: 'close-quote',
-            },
-            code: {
-              color: theme('colors.emerald-pool'),
-              fontWeight: '500',
-              fontSize: '0.875em',
-              backgroundColor: theme('colors.gray.100'),
-              padding: '0.25rem 0.4rem',
-              borderRadius: '0.25rem',
-              border: '1px solid',
-              borderColor: theme('colors.gray.200'),
-            },
-            'code::before': {
-              content: '""',
-            },
-            'code::after': {
-              content: '""',
-            },
-            pre: {
-              color: theme('colors.gray.200'),
-              backgroundColor: theme('colors.gray.900'),
-              overflowX: 'auto',
-              fontWeight: '400',
-              fontSize: '0.875em',
-              lineHeight: '1.7142857',
-              marginTop: '1.7142857em',
-              marginBottom: '1.7142857em',
-              borderRadius: '0.375rem',
-              paddingTop: '0.8571429em',
-              paddingRight: '1.1428571em',
-              paddingBottom: '0.8571429em',
-              paddingLeft: '1.1428571em',
-            },
-            'pre code': {
-              backgroundColor: 'transparent',
-              borderWidth: '0',
-              borderRadius: '0',
-              padding: '0',
-              fontWeight: '400',
-              color: 'inherit',
-              fontSize: 'inherit',
-              fontFamily: 'inherit',
-              lineHeight: 'inherit',
-            },
-            table: {
-              width: '100%',
-              tableLayout: 'auto',
-              textAlign: 'left',
-              marginTop: '2em',
-              marginBottom: '2em',
-            },
-            thead: {
-              borderBottomWidth: '1px',
-              borderBottomColor: theme('colors.gray.200'),
-            },
-            'thead th': {
-              color: theme('colors.gray.900'),
-              fontWeight: '600',
-              verticalAlign: 'bottom',
-              paddingRight: '1em',
-              paddingBottom: '0.5em',
-              paddingLeft: '1em',
-            },
-            'tbody tr': {
-              borderBottomWidth: '1px',
-              borderBottomColor: theme('colors.gray.200'),
-            },
-            'tbody tr:last-child': {
-              borderBottomWidth: '0',
-            },
-            'tbody td': {
-              verticalAlign: 'top',
-              paddingTop: '0.5em',
-              paddingRight: '1em',
-              paddingBottom: '0.5em',
-              paddingLeft: '1em',
-            },
-          },
-        },
-      }),
+      letterSpacing: {
+        tighter: '-0.02em',
+        tight: '-0.01em',
+      }
     },
   },
   plugins: [
@@ -199,7 +36,4 @@ module.exports = {
     require('@tailwindcss/aspect-ratio'),
     require('@tailwindcss/line-clamp'),
   ],
-  future: {
-    hoverOnlyWhenSupported: true,
-  },
 }

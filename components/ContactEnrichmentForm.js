@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ArrowRight } from 'lucide-react';  // Add this import
 import EnrichmentResultPopup from './EnrichmentResultPopup';
 
 export default function ContactEnrichmentForm() {
@@ -34,58 +35,73 @@ export default function ContactEnrichmentForm() {
 
   return (
     <>
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold mb-6 text-daring-indigo">Contact Enrichment</h2>
-        <div className="mb-4">
-          <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">First Name</label>
-          <input
-            type="text"
-            id="firstName"
-            name="firstName"
-            value={formData.firstName}
-            onChange={handleChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
-            placeholder="John"
-          />
+      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-sm space-y-6">
+        <h2 className="text-[20px] font-semibold tracking-tight text-notion-default mb-4">Try Data Enrichment</h2>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="firstName" className="block text-[14px] font-medium text-notion-default mb-1.5">
+                First Name
+              </label>
+              <input
+                type="text"
+                id="firstName"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+                className="w-full px-3 py-2 bg-notion-hover border border-notion-border rounded-lg text-[14px] placeholder-notion-gray/50 focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue transition-all"
+                placeholder="John"
+              />
+            </div>
+            <div>
+              <label htmlFor="lastName" className="block text-[14px] font-medium text-notion-default mb-1.5">
+                Last Name
+              </label>
+              <input
+                type="text"
+                id="lastName"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                className="w-full px-3 py-2 bg-notion-hover border border-notion-border rounded-lg text-[14px] placeholder-notion-gray/50 focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue transition-all"
+                placeholder="Doe"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="companyDomain" className="block text-[14px] font-medium text-notion-default mb-1.5">
+              Company Domain
+            </label>
+            <input
+              type="text"
+              id="companyDomain"
+              name="companyDomain"
+              value={formData.companyDomain}
+              onChange={handleChange}
+              className="w-full px-3 py-2 bg-notion-hover border border-notion-border rounded-lg text-[14px] placeholder-notion-gray/50 focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue transition-all"
+              placeholder="acmeinc.com"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="linkedinUrl" className="block text-[14px] font-medium text-notion-default mb-1.5">
+              LinkedIn URL
+            </label>
+            <input
+              type="text"
+              id="linkedinUrl"
+              name="linkedinUrl"
+              value={formData.linkedinUrl}
+              onChange={handleChange}
+              className="w-full px-3 py-2 bg-notion-hover border border-notion-border rounded-lg text-[14px] placeholder-notion-gray/50 focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue transition-all"
+              placeholder="https://www.linkedin.com/in/username"
+            />
+          </div>
         </div>
-        <div className="mb-4">
-          <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">Last Name</label>
-          <input
-            type="text"
-            id="lastName"
-            name="lastName"
-            value={formData.lastName}
-            onChange={handleChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
-            placeholder="Doe"
-          />
-        </div>
-        <div className="mb-4">
-          <label htmlFor="companyDomain" className="block text-sm font-medium text-gray-700">Company Domain</label>
-          <input
-            type="text"
-            id="companyDomain"
-            name="companyDomain"
-            value={formData.companyDomain}
-            onChange={handleChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
-            placeholder="acmeinc.com"
-          />
-        </div>
-        <div className="mb-4">
-          <label htmlFor="linkedinUrl" className="block text-sm font-medium text-gray-700">LinkedIn URL (Required for Phone Enrichment)</label>
-          <input
-            type="text"
-            id="linkedinUrl"
-            name="linkedinUrl"
-            value={formData.linkedinUrl}
-            onChange={handleChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
-            placeholder="https://www.linkedin.com/in/username"
-          />
-        </div>
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-2 text-daring-indigo">Enrichment Options</h3>
+
+        <div className="space-y-3">
+          <h3 className="text-[14px] font-medium text-notion-default">Enrichment Options</h3>
           <div className="space-y-2">
             <label className="flex items-center">
               <input
@@ -93,9 +109,9 @@ export default function ContactEnrichmentForm() {
                 name="findEmail"
                 checked={formData.findEmail}
                 onChange={handleChange}
-                className="rounded text-emerald-pool focus:ring-emerald-pool"
+                className="w-4 h-4 text-primary-blue rounded border-notion-border focus:ring-primary-blue/20"
               />
-              <span className="ml-2">Find Individual Email</span>
+              <span className="ml-2 text-[14px] text-notion-default">Find Individual Email</span>
             </label>
             <label className="flex items-center">
               <input
@@ -103,9 +119,9 @@ export default function ContactEnrichmentForm() {
                 name="getCompanyEmails"
                 checked={formData.getCompanyEmails}
                 onChange={handleChange}
-                className="rounded text-emerald-pool focus:ring-emerald-pool"
+                className="w-4 h-4 text-primary-blue rounded border-notion-border focus:ring-primary-blue/20"
               />
-              <span className="ml-2">Get Company Emails</span>
+              <span className="ml-2 text-[14px] text-notion-default">Get Company Emails</span>
             </label>
             <label className="flex items-center">
               <input
@@ -113,9 +129,9 @@ export default function ContactEnrichmentForm() {
                 name="enrichLinkedIn"
                 checked={formData.enrichLinkedIn}
                 onChange={handleChange}
-                className="rounded text-emerald-pool focus:ring-emerald-pool"
+                className="w-4 h-4 text-primary-blue rounded border-notion-border focus:ring-primary-blue/20"
               />
-              <span className="ml-2">Enrich LinkedIn</span>
+              <span className="ml-2 text-[14px] text-notion-default">Enrich LinkedIn</span>
             </label>
             <label className="flex items-center">
               <input
@@ -123,27 +139,45 @@ export default function ContactEnrichmentForm() {
                 name="findPhone"
                 checked={formData.findPhone}
                 onChange={handleChange}
-                className="rounded text-emerald-pool focus:ring-emerald-pool"
+                className="w-4 h-4 text-primary-blue rounded border-notion-border focus:ring-primary-blue/20"
               />
-              <span className="ml-2">Find Phone Number</span>
+              <span className="ml-2 text-[14px] text-notion-default">Find Phone Number</span>
             </label>
           </div>
         </div>
-        <button
-                  type="submit"
-                  className={`w-full bg-emerald-pool text-white py-2 px-4 rounded-md hover:bg-opacity-90 transition duration-300 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Enriching Data...' : 'Enrich Data'}
-                </button>
-              </form>
 
-              {showPopup && (
-                <EnrichmentResultPopup
-                  onClose={() => setShowPopup(false)}
-                  formData={formData}
-                />
-              )}
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-full py-2.5 px-4 bg-napoleon hover:bg-napoleon/90 text-white rounded-lg font-medium text-[14px] flex items-center justify-center space-x-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isLoading ? (
+            <>
+              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>Enriching Data...</span>
             </>
-          );
-        }
+          ) : (
+            <>
+              <span>Enrich Data</span>
+              <ArrowRight className="ml-2 w-4 h-4" />
+            </>
+          )}
+        </button>
+
+        <p className="text-[12px] text-notion-gray text-center mt-4">
+          Try our data enrichment tool with sample data
+        </p>
+      </form>
+
+      {showPopup && (
+        <EnrichmentResultPopup
+          onClose={() => setShowPopup(false)}
+          formData={formData}
+        />
+      )}
+    </>
+  );
+}
