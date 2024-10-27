@@ -109,6 +109,7 @@ export default function AdminLayout({ children }) {
 File:   ContactEnrichmentForm.js
 
 import { useState } from 'react';
+import { ArrowRight } from 'lucide-react';  // Add this import
 import EnrichmentResultPopup from './EnrichmentResultPopup';
 
 export default function ContactEnrichmentForm() {
@@ -144,58 +145,73 @@ export default function ContactEnrichmentForm() {
 
   return (
     <>
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold mb-6 text-daring-indigo">Contact Enrichment</h2>
-        <div className="mb-4">
-          <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">First Name</label>
-          <input
-            type="text"
-            id="firstName"
-            name="firstName"
-            value={formData.firstName}
-            onChange={handleChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
-            placeholder="John"
-          />
+      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-sm space-y-6">
+        <h2 className="text-[20px] font-semibold tracking-tight text-notion-default mb-4">Try Data Enrichment</h2>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="firstName" className="block text-[14px] font-medium text-notion-default mb-1.5">
+                First Name
+              </label>
+              <input
+                type="text"
+                id="firstName"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+                className="w-full px-3 py-2 bg-notion-hover border border-notion-border rounded-lg text-[14px] placeholder-notion-gray/50 focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue transition-all"
+                placeholder="John"
+              />
+            </div>
+            <div>
+              <label htmlFor="lastName" className="block text-[14px] font-medium text-notion-default mb-1.5">
+                Last Name
+              </label>
+              <input
+                type="text"
+                id="lastName"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                className="w-full px-3 py-2 bg-notion-hover border border-notion-border rounded-lg text-[14px] placeholder-notion-gray/50 focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue transition-all"
+                placeholder="Doe"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="companyDomain" className="block text-[14px] font-medium text-notion-default mb-1.5">
+              Company Domain
+            </label>
+            <input
+              type="text"
+              id="companyDomain"
+              name="companyDomain"
+              value={formData.companyDomain}
+              onChange={handleChange}
+              className="w-full px-3 py-2 bg-notion-hover border border-notion-border rounded-lg text-[14px] placeholder-notion-gray/50 focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue transition-all"
+              placeholder="acmeinc.com"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="linkedinUrl" className="block text-[14px] font-medium text-notion-default mb-1.5">
+              LinkedIn URL
+            </label>
+            <input
+              type="text"
+              id="linkedinUrl"
+              name="linkedinUrl"
+              value={formData.linkedinUrl}
+              onChange={handleChange}
+              className="w-full px-3 py-2 bg-notion-hover border border-notion-border rounded-lg text-[14px] placeholder-notion-gray/50 focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue transition-all"
+              placeholder="https://www.linkedin.com/in/username"
+            />
+          </div>
         </div>
-        <div className="mb-4">
-          <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">Last Name</label>
-          <input
-            type="text"
-            id="lastName"
-            name="lastName"
-            value={formData.lastName}
-            onChange={handleChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
-            placeholder="Doe"
-          />
-        </div>
-        <div className="mb-4">
-          <label htmlFor="companyDomain" className="block text-sm font-medium text-gray-700">Company Domain</label>
-          <input
-            type="text"
-            id="companyDomain"
-            name="companyDomain"
-            value={formData.companyDomain}
-            onChange={handleChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
-            placeholder="acmeinc.com"
-          />
-        </div>
-        <div className="mb-4">
-          <label htmlFor="linkedinUrl" className="block text-sm font-medium text-gray-700">LinkedIn URL (Required for Phone Enrichment)</label>
-          <input
-            type="text"
-            id="linkedinUrl"
-            name="linkedinUrl"
-            value={formData.linkedinUrl}
-            onChange={handleChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-pool focus:ring focus:ring-emerald-pool focus:ring-opacity-50"
-            placeholder="https://www.linkedin.com/in/username"
-          />
-        </div>
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-2 text-daring-indigo">Enrichment Options</h3>
+
+        <div className="space-y-3">
+          <h3 className="text-[14px] font-medium text-notion-default">Enrichment Options</h3>
           <div className="space-y-2">
             <label className="flex items-center">
               <input
@@ -203,9 +219,9 @@ export default function ContactEnrichmentForm() {
                 name="findEmail"
                 checked={formData.findEmail}
                 onChange={handleChange}
-                className="rounded text-emerald-pool focus:ring-emerald-pool"
+                className="w-4 h-4 text-primary-blue rounded border-notion-border focus:ring-primary-blue/20"
               />
-              <span className="ml-2">Find Individual Email</span>
+              <span className="ml-2 text-[14px] text-notion-default">Find Individual Email</span>
             </label>
             <label className="flex items-center">
               <input
@@ -213,9 +229,9 @@ export default function ContactEnrichmentForm() {
                 name="getCompanyEmails"
                 checked={formData.getCompanyEmails}
                 onChange={handleChange}
-                className="rounded text-emerald-pool focus:ring-emerald-pool"
+                className="w-4 h-4 text-primary-blue rounded border-notion-border focus:ring-primary-blue/20"
               />
-              <span className="ml-2">Get Company Emails</span>
+              <span className="ml-2 text-[14px] text-notion-default">Get Company Emails</span>
             </label>
             <label className="flex items-center">
               <input
@@ -223,9 +239,9 @@ export default function ContactEnrichmentForm() {
                 name="enrichLinkedIn"
                 checked={formData.enrichLinkedIn}
                 onChange={handleChange}
-                className="rounded text-emerald-pool focus:ring-emerald-pool"
+                className="w-4 h-4 text-primary-blue rounded border-notion-border focus:ring-primary-blue/20"
               />
-              <span className="ml-2">Enrich LinkedIn</span>
+              <span className="ml-2 text-[14px] text-notion-default">Enrich LinkedIn</span>
             </label>
             <label className="flex items-center">
               <input
@@ -233,41 +249,58 @@ export default function ContactEnrichmentForm() {
                 name="findPhone"
                 checked={formData.findPhone}
                 onChange={handleChange}
-                className="rounded text-emerald-pool focus:ring-emerald-pool"
+                className="w-4 h-4 text-primary-blue rounded border-notion-border focus:ring-primary-blue/20"
               />
-              <span className="ml-2">Find Phone Number</span>
+              <span className="ml-2 text-[14px] text-notion-default">Find Phone Number</span>
             </label>
           </div>
         </div>
-        <button
-                  type="submit"
-                  className={`w-full bg-emerald-pool text-white py-2 px-4 rounded-md hover:bg-opacity-90 transition duration-300 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Enriching Data...' : 'Enrich Data'}
-                </button>
-              </form>
 
-              {showPopup && (
-                <EnrichmentResultPopup
-                  onClose={() => setShowPopup(false)}
-                  formData={formData}
-                />
-              )}
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-full py-2.5 px-4 bg-napoleon hover:bg-napoleon/90 text-white rounded-lg font-medium text-[14px] flex items-center justify-center space-x-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isLoading ? (
+            <>
+              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>Enriching Data...</span>
             </>
-          );
-        }
+          ) : (
+            <>
+              <span>Enrich Data</span>
+              <ArrowRight className="ml-2 w-4 h-4" />
+            </>
+          )}
+        </button>
+
+        <p className="text-[12px] text-notion-gray text-center mt-4">
+          Try our data enrichment tool with sample data
+        </p>
+      </form>
+
+      {showPopup && (
+        <EnrichmentResultPopup
+          onClose={() => setShowPopup(false)}
+          formData={formData}
+        />
+      )}
+    </>
+  );
+}
 ----------------------------------------
 
 File:   EnrichmentResultPopup.js
 
-// components/EnrichmentResultPopup.js
-
 import { useState } from 'react';
+import { ArrowRight } from 'lucide-react';  // Add this import
 
 export default function EnrichmentResultPopup({ onClose, formData }) {
   const handleCreateAccount = () => {
-    window.open('https://app.dataforge.so', '_blank');
+    window.location.href = 'https://app.dataforge.so';
   };
 
   const blurredEmail = 'user@example.com';
@@ -276,54 +309,65 @@ export default function EnrichmentResultPopup({ onClose, formData }) {
   const blurredCompanyEmails = '5 company email formats found';
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg p-6 max-w-md w-full">
-        <h2 className="text-2xl font-bold mb-4 text-daring-indigo">Enrichment Results</h2>
+        <h2 className="text-2xl font-bold text-notion-default mb-4">Enrichment Results</h2>
+
         <div className="mb-4">
-          <p className="font-semibold">Enriched data for: {formData.firstName} {formData.lastName}</p>
-          <p className="text-sm text-gray-600">Company: {formData.companyDomain}</p>
+          <p className="font-semibold text-notion-default">
+            Enriched data for: {formData.firstName} {formData.lastName}
+          </p>
+          <p className="text-sm text-notion-gray">
+            Company: {formData.companyDomain}
+          </p>
         </div>
+
         <div className="mb-6">
-          <p className="font-semibold mb-2">Results:</p>
-          <div className="space-y-2">
+          <p className="font-semibold mb-2 text-notion-default">Results:</p>
+          <div className="space-y-3">
             {formData.findEmail && (
-              <div className="flex justify-between">
-                <span className="font-medium">Email:</span>
+              <div className="flex justify-between items-center">
+                <span className="text-notion-default">Email:</span>
                 <span className="blur-sm select-none">{blurredEmail}</span>
               </div>
             )}
             {formData.findPhone && (
-              <div className="flex justify-between">
-                <span className="font-medium">Phone:</span>
+              <div className="flex justify-between items-center">
+                <span className="text-notion-default">Phone:</span>
                 <span className="blur-sm select-none">{blurredPhone}</span>
               </div>
             )}
             {formData.enrichLinkedIn && (
-              <div className="flex justify-between">
-                <span className="font-medium">LinkedIn:</span>
+              <div className="flex justify-between items-center">
+                <span className="text-notion-default">LinkedIn:</span>
                 <span className="blur-sm select-none">{blurredLinkedIn}</span>
               </div>
             )}
             {formData.getCompanyEmails && (
-              <div className="flex justify-between">
-                <span className="font-medium">Company Emails:</span>
+              <div className="flex justify-between items-center">
+                <span className="text-notion-default">Company Emails:</span>
                 <span className="blur-sm select-none">{blurredCompanyEmails}</span>
               </div>
             )}
           </div>
         </div>
-        <button
-          onClick={handleCreateAccount}
-          className="w-full bg-emerald-pool text-white py-2 px-4 rounded-md hover:bg-opacity-90 transition duration-300 mb-2"
-        >
-          Create Account to View Results
-        </button>
-        <button
-          onClick={onClose}
-          className="w-full mt-2 text-gray-600 hover:text-gray-800"
-        >
-          Close
-        </button>
+
+        <div className="space-y-3">
+          <button
+            onClick={handleCreateAccount}
+            className="w-full inline-flex items-center justify-center px-6 py-3 bg-emerald-pool hover:bg-emerald-pool/90 text-white rounded-lg text-[16px] font-medium transition-colors group"
+          >
+            Register to View Results
+            <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1" />
+          </button>
+
+          <button
+            onClick={onClose}
+            className="w-full py-2.5 px-4 bg-notion-hover hover:bg-notion-border text-napoleon rounded-lg font-medium text-[14px] transition-all duration-200"
+          >
+            Close
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -386,6 +430,8 @@ File:   Header.js
 // File: components/Header.js
 import Link from 'next/link';
 import Image from 'next/image';
+import { motion } from 'framer-motion';
+import { ArrowRight } from 'lucide-react';  // Add this import
 
 export default function Header() {
   return (
@@ -3133,29 +3179,77 @@ Directory:   blog
 File:     index.js
 
 // File: pages/blog/index.js
-import { useEffect, useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
-import Link from 'next/link'
-import { format } from 'date-fns'
-import Header from '../../components/Header'
-import Footer from '../../components/Footer'
+import { useEffect, useState } from 'react';
+import { createClient } from '@supabase/supabase-js';
+import Link from 'next/link';
+import { format } from 'date-fns';
+import { motion } from 'framer-motion';
+import Header from '../../components/Header';
+import Footer from '../../components/Footer';
+import { 
+  Clock, 
+  Search, 
+  Filter,
+  ChevronRight,
+  User,
+  Calendar,
+  Loader,
+  BookOpen
+} from 'lucide-react';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-)
+);
+
+// Utility function for reading time
+function calculateReadingTime(content) {
+  if (!content) return 1;
+  const wordsPerMinute = 200;
+  const wordCount = content.trim().split(/\s+/).length;
+  return Math.ceil(wordCount / wordsPerMinute);
+}
 
 export default function BlogIndex() {
-  const [posts, setPosts] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredPosts, setFilteredPosts] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isSearching, setIsSearching] = useState(false);
+
+  const postsPerPage = 9;
 
   useEffect(() => {
-    fetchPosts()
-  }, [])
+    fetchPosts();
+  }, []);
+
+  // Search functionality
+  useEffect(() => {
+    if (searchQuery) {
+      setIsSearching(true);
+      const searchResults = posts.filter(post => 
+        post.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        post.excerpt?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        post.posts_categories?.some(({ categories }) => 
+          categories.name.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      );
+      setFilteredPosts(searchResults);
+      setCurrentPage(1);
+      setIsSearching(false);
+    } else {
+      setFilteredPosts(posts);
+    }
+  }, [searchQuery, posts]);
 
   async function fetchPosts() {
     try {
-      const { data, error } = await supabase
+      setLoading(true);
+      setError(null);
+
+      const { data: postsData, error: postsError } = await supabase
         .from('posts')
         .select(`
           *,
@@ -3165,89 +3259,235 @@ export default function BlogIndex() {
           )
         `)
         .eq('status', 'published')
-        .order('published_at', { ascending: false })
+        .order('published_at', { ascending: false });
 
-      if (error) throw error
-      setPosts(data || [])
-    } catch (error) {
-      console.error('Error fetching posts:', error)
+      if (postsError) throw postsError;
+
+      // Process and set posts
+      setPosts(postsData || []);
+      setFilteredPosts(postsData || []);
+    } catch (err) {
+      console.error('Error fetching posts:', err);
+      setError('Failed to load blog posts. Please try again later.');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
+  }
+
+  // Calculate current posts for pagination
+  const indexOfLastPost = currentPage * postsPerPage;
+  const indexOfFirstPost = indexOfLastPost - postsPerPage;
+  const currentPosts = filteredPosts.slice(indexOfFirstPost, indexOfLastPost);
+  const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
+
+  // Featured post logic
+  const featuredPost = posts.find(post => post.is_featured) || posts[0];
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="max-w-7xl mx-auto px-4 py-20 text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Something went wrong
+          </h2>
+          <p className="text-gray-600 mb-8">{error}</p>
+          <button 
+            onClick={fetchPosts}
+            className="px-6 py-3 bg-emerald-pool text-white rounded-lg hover:bg-emerald-pool/90 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+        <Footer />
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h1 className="text-4xl font-bold text-gray-900 mb-8">Blog</h1>
 
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-pool mx-auto"></div>
+      {/* Hero Section */}
+      <section className="py-24 bg-white border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-2xl mx-auto text-center mb-12">
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+              Blog & Resources
+            </h1>
+            <p className="text-lg text-gray-600">
+              Expert insights on B2B prospecting, sales strategies, and data enrichment
+            </p>
           </div>
-        ) : (
-          <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-3">
-            {posts.map((post) => (
-              <article key={post.id} className="group">
-                <Link href={`/blog/${post.slug}`} passHref>
-                  <div className="cursor-pointer">
-                    {post.featured_image && (
-                      <div className="relative h-64 rounded-lg overflow-hidden mb-6">
-                        <img 
-                          src={post.featured_image}
-                          alt={post.title}
-                          className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-200"
-                        />
-                      </div>
-                    )}
 
-                    {/* Categories */}
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {post.posts_categories.map(({ categories }) => (
-                        <span
-                          key={categories.slug}
-                          className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-emerald-pool/10 text-emerald-pool"
-                        >
-                          {categories.name}
-                        </span>
-                      ))}
-                    </div>
-
-                    {/* Title */}
-                    <h2 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-emerald-pool transition-colors">
-                      {post.title}
-                    </h2>
-
-                    {/* Excerpt */}
-                    {post.excerpt && (
-                      <p className="text-gray-600 mb-4 line-clamp-2">
-                        {post.excerpt}
-                      </p>
-                    )}
-
-                    {/* Meta */}
-                    <div className="flex items-center text-sm text-gray-500">
-                      <span>{post.profiles?.full_name}</span>
-                      <span className="mx-2">·</span>
-                      <span>{format(new Date(post.published_at || post.created_at), 'MMM d, yyyy')}</span>
-                      {post.estimated_read_time && (
-                        <>
-                          <span className="mx-2">·</span>
-                          <span>{post.estimated_read_time} min read</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </Link>
-              </article>
-            ))}
+          {/* Search Bar */}
+          <div className="max-w-2xl mx-auto">
+            <div className="flex gap-4">
+              <div className="flex-1 relative">
+                <input 
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search articles..."
+                  className="w-full px-4 py-3 pl-10 rounded-lg border border-gray-200 focus:ring-2 focus:ring-emerald-pool/20 focus:border-emerald-pool transition-colors"
+                />
+                {isSearching ? (
+                  <Loader className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />
+                ) : (
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                )}
+              </div>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      </section>
+
+      {/* Blog Posts Grid */}
+      <section className="py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {loading ? (
+            <div className="text-center py-12">
+              <Loader className="w-8 h-8 animate-spin text-emerald-pool mx-auto" />
+              <p className="mt-4 text-gray-600">Loading posts...</p>
+            </div>
+          ) : (
+            <>
+              {filteredPosts.length === 0 ? (
+                <div className="text-center py-12">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    No posts found
+                  </h3>
+                  <p className="text-gray-600">
+                    Try adjusting your search terms
+                  </p>
+                </div>
+              ) : (
+                <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                  {currentPosts.map((post, index) => (
+                    <motion.article
+                      key={post.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="group relative bg-white rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg"
+                    >
+                      <Link href={`/blog/${post.slug}`}>
+                        <a className="block">
+                          {/* Image Container */}
+                          <div className="relative aspect-video">
+                            <img 
+                              src={post.featured_image}
+                              alt={post.title}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                            {/* Hover Overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                              <div className="absolute bottom-4 left-4 right-4 text-white">
+                                <div className="flex items-center justify-between">
+                                  <span className="flex items-center text-sm">
+                                    <Clock className="w-4 h-4 mr-1" />
+                                    {calculateReadingTime(post.content)} min read
+                                  </span>
+                                  <span className="flex items-center text-sm font-medium">
+                                    Read More 
+                                    <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Content */}
+                          <div className="p-6">
+                            {/* Categories */}
+                            <div className="flex flex-wrap gap-2 mb-4">
+                              {post.posts_categories?.map(({ categories }) => (
+                                <span
+                                  key={categories.slug}
+                                  className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-emerald-pool/10 text-emerald-pool"
+                                >
+                                  {categories.name}
+                                </span>
+                              ))}
+                            </div>
+
+                            {/* Title */}
+                            <h2 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-emerald-pool transition-colors">
+                              {post.title}
+                            </h2>
+
+                            {/* Excerpt */}
+                            {post.excerpt && (
+                              <p className="text-gray-600 line-clamp-2 mb-4">
+                                {post.excerpt}
+                              </p>
+                            )}
+
+                            {/* Meta */}
+                            <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-100">
+                              <div className="flex items-center">
+                                <div className="w-8 h-8 rounded-full bg-emerald-pool/10 flex items-center justify-center">
+                                  <User className="w-4 h-4 text-emerald-pool" />
+                                </div>
+                                <span className="ml-2 text-sm text-gray-600">
+                                  {post.profiles?.full_name}
+                                </span>
+                              </div>
+                              <div className="flex items-center text-sm text-gray-500">
+                                <Calendar className="w-4 h-4 mr-1" />
+                                {format(new Date(post.published_at || post.created_at), 'MMM d, yyyy')}
+                              </div>
+                            </div>
+                          </div>
+                        </a>
+                      </Link>
+                    </motion.article>
+                  ))}
+                </div>
+              )}
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="mt-12 flex justify-center items-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-4 py-2 rounded-lg bg-white text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:hover:bg-white transition-colors"
+                  >
+                    Previous
+                  </button>
+
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNumber) => (
+                    <button
+                      key={pageNumber}
+                      onClick={() => setCurrentPage(pageNumber)}
+                      className={`px-4 py-2 rounded-lg transition-colors ${
+                        currentPage === pageNumber
+                          ? 'bg-emerald-pool text-white'
+                          : 'bg-white text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      {pageNumber}
+                    </button>
+                  ))}
+
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-4 py-2 rounded-lg bg-white text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:hover:bg-white transition-colors"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </section>
+
       <Footer />
     </div>
-  )
+  );
 }
 ----------------------------------------
 
@@ -3579,7 +3819,6 @@ export default function BlogPost({ post, relatedPosts, canonicalUrl, siteTitle }
 
 File:   _document.js
 
-// File: pages/_document.js
 import { Html, Head, Main, NextScript } from 'next/document'
 
 export default function Document() {
@@ -3603,303 +3842,737 @@ export default function Document() {
 File:   index.js
 
 import Head from 'next/head';
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
+import { useState } from 'react';
+import { motion } from 'framer-motion';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ContactEnrichmentForm from '../components/ContactEnrichmentForm';
-
-const fadeIn = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.6 }
-};
-
-const enrichmentMethods = [
-  {
-    id: 'individual',
-    title: 'Individual Enrichment',
-    benefit: 'Get detailed insights on key decision-makers',
-    description: 'Enhance your understanding of individual prospects with comprehensive data points including job history, skills, and social media presence. This deep insight allows for highly personalized outreach, increasing your chances of making meaningful connections.',
-  },
-  {
-    id: 'bulk',
-    title: 'Bulk Enrichment',
-    benefit: 'Scale your outreach efforts efficiently',
-    description: 'Upload and enrich thousands of contacts simultaneously, saving countless hours of manual research. Our bulk enrichment process maintains high accuracy while dramatically reducing the time needed to prepare for large-scale marketing or sales campaigns.',
-  },
-  {
-    id: 'extension',
-    title: 'Chrome Extension',
-    benefit: 'Enrich on-the-go while browsing',
-    description: 'Our Chrome extension seamlessly integrates with your workflow, allowing you to enrich contact data directly from LinkedIn profiles or company websites. This real-time enrichment capability ensures you always have the most up-to-date information at your fingertips during your research process.',
-  },
-  {
-    id: 'api',
-    title: 'API Integration',
-    benefit: 'Automate your data enrichment process',
-    description: 'Integrate our powerful enrichment capabilities directly into your existing tools and workflows. With our robust API, you can automate the enrichment process, ensuring your CRM or marketing platform always has the freshest, most accurate data without manual intervention.',
-  },
-];
-
-const EnrichmentMethod = ({ method, isActive, onClick, isMobile }) => (
-  <div className={`${isMobile ? 'mb-4' : ''}`}>
-    <motion.div
-      className={`cursor-pointer p-4 rounded-lg ${isActive ? 'bg-emerald-pool text-white' : 'bg-white hover:bg-puturple/30'}`}
-      onClick={() => onClick(method.id)}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-    >
-      <h3 className={`text-xl font-semibold mb-2 ${isActive ? 'text-white' : 'text-daring-indigo'}`}>{method.title}</h3>
-      <p className={`text-sm ${isActive ? 'text-white' : 'text-napoleon'}`}>{method.benefit}</p>
-    </motion.div>
-    {isMobile && isActive && (
-      <AnimatePresence>
-        <motion.div
-          key={method.id}
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          exit={{ opacity: 0, height: 0 }}
-          transition={{ duration: 0.3 }}
-          className="bg-white p-4 rounded-lg mt-2 shadow-md"
-        >
-          <p className="text-napoleon">{method.description}</p>
-        </motion.div>
-      </AnimatePresence>
-    )}
-  </div>
-);
-
-const FlexibleEnrichmentMethods = () => {
-  const [activeMethod, setActiveMethod] = useState(enrichmentMethods[0].id);
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkIsMobile();
-    window.addEventListener('resize', checkIsMobile);
-    return () => window.removeEventListener('resize', checkIsMobile);
-  }, []);
-
-  return (
-    <section className="py-20 bg-gradient-to-b from-white via-puturple/30 to-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.h2 className="text-3xl font-bold text-center mb-12 text-daring-indigo" {...fadeIn}>
-          Flexible Enrichment Methods
-        </motion.h2>
-        <div className={`${isMobile ? 'flex flex-col' : 'flex flex-col md:flex-row gap-8'}`}>
-          <div className={`${isMobile ? 'w-full' : 'md:w-1/2'} space-y-4`}>
-            {enrichmentMethods.map((method) => (
-              <EnrichmentMethod
-                key={method.id}
-                method={method}
-                isActive={activeMethod === method.id}
-                onClick={setActiveMethod}
-                isMobile={isMobile}
-              />
-            ))}
-          </div>
-          {!isMobile && (
-            <div className="md:w-1/2">
-              <div className="bg-white p-6 rounded-lg shadow-lg h-[400px] overflow-hidden relative">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={activeMethod}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="absolute inset-0 p-6 overflow-y-auto"
-                  >
-                    <h3 className="text-2xl font-semibold mb-4 text-daring-indigo">
-                      {enrichmentMethods.find(m => m.id === activeMethod).title}
-                    </h3>
-                    <p className="text-napoleon">
-                      {enrichmentMethods.find(m => m.id === activeMethod).description}
-                    </p>
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </section>
-  );
-};
+import { 
+  Search, 
+  Zap, 
+  Shield, 
+  Database,
+  Users,
+  Mail,
+  Phone,
+  Building2,
+  ArrowRight,
+  Check,
+  Star,
+  MessageCircle,
+  Sparkles,
+  Target,
+  Clock,
+  DollarSign,
+  Link as LinkIcon,
+  BarChart,
+  Globe
+} from 'lucide-react';
 
 export default function Home() {
+  // State for interactive elements
+  const [videoPlaying, setVideoPlaying] = useState(false);
+  const [activeFeature, setActiveFeature] = useState(null);
+
   return (
-    <div className="min-h-screen flex flex-col bg-white text-napoleon font-sans">
+    <div className="min-h-screen bg-white font-sans antialiased">
+      {/* Enhanced SEO & Meta Tags */}
       <Head>
-        <title>Data Forge - Enhance Your B2B Contact Information</title>
+        <title>Data Forge | Find & Verify Business Decision Makers | 98% Accurate</title>
+        <meta name="description" content="Access 200M+ verified decision-maker contacts. Get direct emails, phones & insights with 98%  deliverability. Start free - 50 monthly credits, no card needed." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+
+        {/* OpenGraph Tags */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://app.dataforge.so" />
+        <meta property="og:title" content="Data Forge | B2B Contact Intelligence Platform" />
+        <meta property="og:description" content="Transform cold outreach into warm conversations with verified decision-maker data. 98%  deliverability." />
+        <meta property="og:image" content="https://app.dataforge.so/og-image.png" />
+
+        {/* Twitter Tags */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@dataforge" />
+
+        {/* Rich Snippets */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "SaaSSolution",
+            "name": "Data Forge",
+            "description": "B2B contact intelligence platform with 98%  deliverability",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD",
+              "description": "Free plan with 50 monthly credits"
+            },
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4.9",
+              "reviewCount": "2000"
+            }
+          })}
+        </script>
+
+        {/* Canonical URL */}
+        <link rel="canonical" href="https://app.dataforge.so" />
       </Head>
 
       <Header />
 
-      <main className="flex-grow">
-        {/* Hero Section with Contact Enrichment Form */}
-        <section className="bg-gradient-to-b from-white via-puturple/30 to-white py-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col md:flex-row items-center justify-between">
-              <motion.div className="md:w-1/2 mb-10 md:mb-0" {...fadeIn}>
-                <h1 className="text-4xl md:text-5xl font-bold mb-6 text-daring-indigo">Enhance Your B2B Contact Information</h1>
-                <p className="text-xl mb-8 text-napoleon">Get accurate, up-to-date contact details for your prospects and customers.</p>
-                <ul className="mb-8">
-                  <li className="flex items-center mb-2">
-                    <span className="mr-2">✓</span>
-                    <span>Verify and update existing contacts</span>
-                  </li>
-                  <li className="flex items-center mb-2">
-                    <span className="mr-2">✓</span>
-                    <span>Find new decision-makers in target companies</span>
-                  </li>
-                  <li className="flex items-center">
-                    <span className="mr-2">✓</span>
-                    <span>Improve your outreach success rate</span>
-                  </li>
-                </ul>
+      <main>
+        {/* Hero Section - Problem → Solution → Action */}
+        <section className="relative py-24 overflow-hidden">
+          {/* Geometric Background Pattern */}
+          <div className="absolute inset-0">
+            <div className="absolute inset-0 bg-gradient-to-b from-gray-50 to-white" />
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,transparent_1px,white_1px),linear-gradient(to_bottom,transparent_1px,white_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,black,transparent)]" />
+          </div>
+
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              {/* Left Column - Value Proposition */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="max-w-xl"
+              >
+                {/* Trust Badge - Instant Value Proposition */}
+                <div className="inline-flex items-center px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-sm font-medium mb-6">
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  98% Deliverability
+                </div>
+
+                {/* Main Value Proposition */}
+                <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-gray-900 mb-4">
+                  Find & Connect with{' '}
+                  <span className="text-emerald-600">Decision Makers</span>
+                  <span className="block text-xl sm:text-2xl font-normal text-gray-600 mt-4">
+                    Turn cold outreach into warm conversations with verified data
+                  </span>
+                </h1>
+
+                {/* Clear Benefit Statement */}
+                <p className="text-lg text-gray-600 mb-8">
+                  Access 200M+ verified business contacts. Get direct dials, 
+                  emails, and insights to reach the right people, right now.
+                </p>
+
+                {/* Key Benefits - Problem Solvers */}
+                <div className="space-y-4 mb-8">
+                  {[
+                    "Find emails & phones directly from LinkedIn profiles",
+                    "Enrich entire contact lists in bulk",
+                    "Chrome extension for instant enrichment"
+                  ].map((benefit, index) => (
+                    <div key={index} className="flex items-start">
+                      <div className="flex-shrink-0 h-6 w-6 rounded-full bg-emerald-50 flex items-center justify-center">
+                        <Check className="h-4 w-4 text-emerald-600" />
+                      </div>
+                      <span className="ml-3 text-gray-600">{benefit}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Primary CTA with Value Stack */}
+                <div className="space-y-4">
+                  <Link href="https://app.dataforge.so">
+                    <a className="inline-flex items-center px-6 py-3 text-lg font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition duration-150 ease-in-out shadow-lg shadow-emerald-600/20 hover:shadow-xl hover:shadow-emerald-600/30">
+                      Get Started Free
+                      <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                    </a>
+                  </Link>
+                  <p className="text-sm text-gray-500">
+                    ✨ Free forever plan includes 50 credits/month • No credit card needed
+                  </p>
+                </div>
+
               </motion.div>
-              <motion.div className="md:w-1/2 md:pl-10" {...fadeIn}>
-                <ContactEnrichmentForm />
+
+              {/* Right Column - Interactive Demo */}
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2, duration: 0.5 }}
+                className="relative"
+              >
+                <div className="bg-white rounded-xl shadow-xl border border-gray-200 p-6">
+                  {/* Success Indicator */}
+                  <div className="absolute -top-3 -right-3">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-emerald-600 text-white text-sm font-medium">
+                      <Sparkles className="w-4 h-4 mr-1" />
+                      Try it free
+                    </span>
+                  </div>
+                  <ContactEnrichmentForm />
+                </div>
               </motion.div>
             </div>
           </div>
         </section>
 
-        {/* How It Works */}
-        <section className="py-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <motion.h2 className="text-3xl font-bold text-center mb-16 text-daring-indigo" {...fadeIn}>
-              How Data Forge Works
-            </motion.h2>
-            <div className="flex flex-col md:flex-row justify-between items-start space-y-12 md:space-y-0 md:space-x-8">
+        {/* Enhanced Social Proof Section */}
+        <section className="py-12 border-y border-notion-border bg-white">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+              <div className="flex items-center space-x-4">
+                <Star className="w-6 h-6 text-yellow-400" />
+                <div className="text-[16px] font-medium">
+                     <span className="text-notion-gray ml-2">Trusted by fast-growing teams from:</span>
+                </div>
+              </div>
+
+              {/* Enhanced Logo Section */}
+              <div className="flex items-center space-x-12">
+                {/* Added Premium Brand Logos */}
+                <div className="grid grid-cols-6 gap-12">
+                  {[
+                    { name: "Notion", color: "text-blue-500" },
+                    { name: "Figma", color: "text-red-500" },
+                    { name: "Linear", color: "text-blue-600" },
+                    { name: "Vercel", color: "text-red-600" },
+                    { name: "Railway", color: "text-blue-700" },
+                    { name: "Retool", color: "text-blue-800" }
+                  ].map((company, index) => (
+                    <div 
+                      key={index}
+                      className="flex items-center justify-center grayscale hover:grayscale-0 transition-all duration-300"
+                    >
+                      <span className={`text-[18px] font-bold ${company.color}`}>
+                        {company.name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Enhanced Features Grid */}
+        <section className="py-20 bg-notion-hover">
+          <div className="max-w-6xl mx-auto px-4">
+            <div className="text-center mb-16">
+              <h2 className="text-[32px] font-bold tracking-tight mb-4">
+                Everything you need to supercharge your outreach
+              </h2>
+              <p className="text-notion-gray text-[18px] max-w-2xl mx-auto">
+                Get comprehensive contact data and insights to connect with 
+                decision-makers at scale
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8">
               {[
-                { number: 1, title: "Input Your Data", description: "Enter the information you have about your contacts or target companies." },
-                { number: 2, title: "We Enrich Your Data", description: "Our system searches multiple reliable sources to find and verify contact information." },
-                { number: 3, title: "Get Updated Results", description: "Receive accurate, up-to-date contact details ready for your outreach campaigns." }
-              ].map((step, index) => (
-                <motion.div key={index} className="w-full md:w-1/3" {...fadeIn}>
-                  <div className="bg-emerald-pool text-white rounded-full w-12 h-12 flex items-center justify-center text-xl font-bold mb-4">
-                    {step.number}
+                {
+                  icon: Mail,
+                  title: "Smart Email Finder",
+                  description: "Get verified business emails with pattern recognition & multi-source validation",
+                  features: [
+                    "99.9% deliverability",
+                    "Format prediction",
+                    "Bulk verification"
+                  ]
+                },
+                {
+                  icon: Phone,
+                  title: "Direct Dial Intelligence",
+                  description: "Access direct numbers and mobile phones of key decision makers",
+                  features: [
+                    "Mobile & direct lines",
+                    "International coverage",
+                    "Real-time validation"
+                  ]
+                },
+                {
+                  icon: Building2,
+                  title: "Rich Company Data",
+                  description: "Get comprehensive insights about target companies",
+                  features: [
+                    "Tech stack data",
+                    "Employee counts",
+                    "Revenue insights"
+                  ]
+                },
+                {
+                  icon: Shield,
+                  title: "Enterprise Security",
+                  description: "Bank-grade security with complete data protection",
+                  features: [
+                    "SOC 2 Type II",
+                    "GDPR compliant",
+                    "Data encryption"
+                  ]
+                },
+                {
+                  icon: Database,
+                  title: "Bulk Enrichment",
+                  description: "Process thousands of contacts simultaneously",
+                  features: [
+                    "CSV upload/export",
+                    "API access",
+                    "Duplicate detection"
+                  ]
+                },
+                {
+                  icon: Users,
+                  title: "Team Features",
+                  description: "Collaborate effectively across your organization",
+                  features: [
+                    "Shared credits",
+                    "Activity tracking",
+                    "Role management"
+                  ]
+                }
+              ].map((feature, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 * index, duration: 0.6 }}
+                  className="bg-white p-8 rounded-xl shadow-sm hover:shadow-xl transition-all duration-200 group"
+                >
+                  <div className="w-12 h-12 rounded-lg bg-emerald-pool/10 flex items-center justify-center mb-6">
+                    <feature.icon className="w-6 h-6 text-emerald-pool" />
                   </div>
-                  <h3 className="text-xl font-semibold mb-2 text-daring-indigo">{step.title}</h3>
-                  <p className="text-napoleon">{step.description}</p>
+
+                  <h3 className="text-[20px] font-semibold mb-3 group-hover:text-emerald-pool transition-colors">
+                    {feature.title}
+                  </h3>
+
+                  <p className="text-notion-gray text-[16px] mb-6">
+                    {feature.description}
+                  </p>
+
+                  <ul className="space-y-3">
+                    {feature.features.map((item, fIndex) => (
+                      <li key={fIndex} className="flex items-center text-[14px] text-notion-gray">
+                        <Check className="w-4 h-4 text-emerald-pool mr-2 flex-shrink-0" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </motion.div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Features */}
-        <section className="bg-parfait bg-opacity-20 py-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <motion.h2 className="text-3xl font-bold text-center mb-16 text-daring-indigo" {...fadeIn}>
-              Key Features
-            </motion.h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+        {/* How It Works Section */}
+        <section className="py-20 relative overflow-hidden">
+          {/* Large transparent background numbers */}
+          <div className="absolute inset-0 flex justify-between items-center px-20 pointer-events-none">
+            {['01', '02', '03'].map((num, index) => (
+              <span 
+                key={num}
+                className="text-[200px] font-bold text-emerald-pool/5 select-none"
+                style={{
+                  transform: `translateX(${(index - 1) * 20}px)`,
+                }}
+              >
+                {num}
+              </span>
+            ))}
+          </div>
+
+          <div className="max-w-6xl mx-auto px-4 relative">
+            <div className="text-center mb-16">
+              <h2 className="text-[32px] font-bold tracking-tight mb-4">
+                How Data Forge Works
+              </h2>
+              <p className="text-notion-gray text-[18px] max-w-2xl mx-auto">
+                Get started with our simple three-step process to enhance your contact data
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8">
               {[
-                { title: "Fast Processing", description: "Get results within minutes, not hours or days." },
-                { title: "High Accuracy", description: "Our data is verified from multiple sources for reliability." },
-                { title: "Comprehensive Results", description: "Get emails, phone numbers, job titles, and more." },
-                { title: "Data Protection", description: "Your data and searches are kept private and secure." },
-                { title: "Easy Integration", description: "Works with popular CRMs and sales tools." },
-                { title: "Regular Updates", description: "Our database is constantly refreshed for the latest information." }
-              ].map((feature, index) => (
+                {
+                  number: "01",
+                  title: "Input Your Data",
+                  description: "Enter the information you have about your contacts or target companies.",
+                  icon: Search,
+                  color: "bg-daring-indigo",
+                  features: [
+                    "Single contact lookup",
+                    "Bulk upload via CSV",
+                    "API integration"
+                  ]
+                },
+                {
+                  number: "02",
+                  title: "We Enrich Your Data",
+                  description: "Our system searches multiple reliable sources to find and verify contact information.",
+                  icon: Database,
+                  color: "bg-parfait",
+                  features: [
+                    "Real-time verification",
+                    "Multi-source validation",
+                    "AI-powered matching"
+                  ]
+                },
+                {
+                  number: "03",
+                  title: "Get Updated Results",
+                  description: "Receive accurate, up-to-date contact details ready for your outreach campaigns.",
+                  icon: Check,
+                  color: "bg-emerald-pool",
+                  features: [
+                    "Verified email addresses",
+                    "Direct phone numbers",
+                    "Company insights"
+                  ]
+                }
+              ].map((step, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 * index, duration: 0.6 }}
+                  className="relative"
+                >
+                  {/* Card */}
+                  <div className="bg-white rounded-lg border border-notion-border p-8 h-full hover:shadow-lg transition-all duration-200 group">
+                    {/* Step Number */}
+                    <div className="flex items-center space-x-4 mb-6">
+                      <div className={`w-12 h-12 rounded-lg ${step.color} bg-opacity-10 flex items-center justify-center`}>
+                        <span className={`text-xl font-bold ${step.color.replace('bg-', 'text-')}`}>
+                          {step.number}
+                        </span>
+                      </div>
+                      <step.icon className={`w-6 h-6 ${step.color.replace('bg-', 'text-')}`} />
+                    </div>
+
+                    {/* Content */}
+                    <h3 className="text-[20px] font-semibold mb-3 group-hover:text-emerald-pool transition-colors">
+                      {step.title}
+                    </h3>
+                    <p className="text-notion-gray text-[16px] mb-6">
+                      {step.description}
+                    </p>
+
+                    {/* Features */}
+                    <ul className="space-y-3">
+                      {step.features.map((feature, fIndex) => (
+                        <li key={fIndex} className="flex items-center text-[14px] text-notion-gray">
+                          <Check className="w-4 h-4 text-emerald-pool mr-2 flex-shrink-0" />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    {/* Connect lines between cards on desktop */}
+                    {index < 2 && (
+                      <div className="hidden md:block absolute top-1/2 -right-4 w-8 border-t-2 border-dashed border-notion-border" />
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Bottom CTA */}
+            <div className="mt-12 text-center">
+              <motion.button
+                className="inline-flex items-center px-6 py-3 bg-emerald-pool hover:bg-emerald-pool/90 text-white rounded-lg text-[16px] font-medium transition-colors group"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Start Enriching Your Data
+                <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </motion.button>
+            </div>
+          </div>
+        </section>
+
+
+
+        {/* Stats Section - Proof of Scale */}
+        <section className="py-16 bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              {[
+                {
+                  number: "200M+",
+                  label: "Verified Contacts",
+                  icon: Users,
+                  bgColor: "bg-emerald-pool/10",
+                  textColor: "text-emerald-pool",
+                  borderColor: "border-emerald-pool/20"
+                },
+                {
+                  number: "98%",
+                  label: "Deliverability Rate",
+                  icon: Target,
+                  bgColor: "bg-daring-indigo/10",
+                  textColor: "text-daring-indigo",
+                  borderColor: "border-daring-indigo/20"
+                },
+                {
+                  number: "50+",
+                  label: "Data Points per Contact",
+                  icon: Database,
+                  bgColor: "bg-puturple/10",
+                  textColor: "text-puturple",
+                  borderColor: "border-puturple/20"
+                },
+                {
+                  number: "Real-time",
+                  label: "Verification",
+                  icon: Zap,
+                  bgColor: "bg-parfait/10",
+                  textColor: "text-parfait",
+                  borderColor: "border-parfait/20"
+                }
+              ].map((stat, index) => (
                 <motion.div 
                   key={index}
-                  className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition duration-300"
-                  whileHover={{ y: -5 }}
-                  {...fadeIn}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                  className="relative group"
                 >
-                  <h3 className="text-xl font-semibold mb-2 text-daring-indigo">{feature.title}</h3>
-                  <p className="text-napoleon">{feature.description}</p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* New Flexible Enrichment Methods Section */}
-        <FlexibleEnrichmentMethods />
-
-        {/* Testimonials */}
-        <section className="py-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <motion.h2 className="text-3xl font-bold text-center mb-16 text-daring-indigo" {...fadeIn}>
-              What Our Clients Say
-            </motion.h2>
-            <div className="grid md:grid-cols-2 gap-8">
-              {[
-                { quote: "Data Forge has significantly improved our outreach success rate. We're now connecting with the right people more often.", name: "Sarah Johnson", title: "Sales Manager, TechCorp", image: "/api/placeholder/60/60" },
-                { quote: "The accuracy of the contact information has saved us countless hours of manual research and verification.", name: "Michael Lee", title: "Marketing Director, GrowthSolutions", image: "/api/placeholder/60/60" }
-              ].map((testimonial, index) => (
-                <motion.div key={index} className="bg-white p-8 rounded-lg shadow-lg" {...fadeIn}>
-                  <p className="text-napoleon mb-6 text-lg italic">"{testimonial.quote}"</p>
-                  <div className="flex items-center">
-                    <img src={testimonial.image} alt={testimonial.name} className="w-12 h-12 rounded-full mr-4" />
-                    <div>
-                      <p className="font-semibold text-daring-indigo">{testimonial.name}</p>
-                      <p className="text-sm text-napoleon">{testimonial.title}</p>
+                  <div className="text-center p-6 rounded-xl bg-white border transition-all duration-200 hover:shadow-lg">
+                    <div className={`inline-flex items-center justify-center w-14 h-14 rounded-lg ${stat.bgColor} mb-4 group-hover:scale-110 transition-transform duration-200`}>
+                      <stat.icon className={`w-7 h-7 ${stat.textColor}`} />
+                    </div>
+                    <div className={`text-2xl md:text-3xl font-bold ${stat.textColor} mb-2`}>
+                      {stat.number}
+                    </div>
+                    <div className="text-sm md:text-base text-napoleon">
+                      {stat.label}
                     </div>
                   </div>
+                  {/* Subtle border accent on hover */}
+                  <div className={`absolute inset-0 rounded-xl border-2 ${stat.borderColor} opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none`} />
                 </motion.div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* FAQ Section */}
-        <section className="py-20 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <motion.h2 className="text-3xl font-bold text-center mb-12 text-daring-indigo" {...fadeIn}>
-              Frequently Asked Questions
-            </motion.h2>
-            <div className="space-y-8">
-              {[
-                { question: "How accurate is the enriched data?", answer: "Our data is highly accurate, with a 95% match rate for email addresses and 90% for phone numbers." },
-                { question: "Is my data safe with Data Forge?", answer: "Absolutely. We prioritize data security and comply with GDPR and other data protection regulations." },
-                { question: "How often is your database updated?", answer: "Our database is updated daily to ensure you always have access to the most current information." },
-                { question: "Can I integrate Data Forge with my CRM?", answer: "Yes, we offer integrations with popular CRMs like Salesforce, HubSpot, and more." },
-              ].map((faq, index) => (
-                <motion.div key={index} className="bg-white p-6 rounded-lg shadow-lg" {...fadeIn}>
-                  <h3 className="text-lg font-semibold mb-2 text-daring-indigo">{faq.question}</h3>
-                  <p className="text-napoleon">{faq.answer}</p>
-                </motion.div>
-              ))}
+
+        {/* I'll continue with the features, pricing, and final CTA sections... */}
+
+        {/* Key Benefits Section */}
+                <section className="py-20 bg-gray-50">
+                  <div className="max-w-7xl mx-auto px-4">
+                    <div className="text-center mb-16">
+                      <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                        Why teams love Data Forge
+                      </h2>
+                      <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                        Transform your outreach workflow with powerful data enrichment tools
+                      </p>
+                    </div>
+
+                    <div className="grid md:grid-cols-3 gap-8">
+                      {[
+                        {
+                          title: "Save Hours Daily",
+                          description: "Stop manual research. Get verified contact data instantly for individuals or entire lists.",
+                          icon: Clock,
+                          benefits: [
+                            "Instant LinkedIn enrichment",
+                            "Bulk list processing",
+                            "Browser extension"
+                          ],
+                          color: "emerald"
+                        },
+                        {
+                          title: "Increase Response Rates",
+                          description: "Reach the right person with accurate, verified contact information.",
+                          icon: BarChart,
+                          benefits: [
+                            "98% email deliverability",
+                            "Direct dial numbers",
+                            "Role verification"
+                          ],
+                          color: "blue"
+                        },
+                        {
+                          title: "Scale Your Outreach",
+                          description: "Automate your prospecting workflow with powerful tools and integrations.",
+                          icon: Zap,
+                          benefits: [
+                            "API access",
+                            "CRM integration",
+                            "Export capabilities"
+                          ],
+                          color: "purple"
+                        }
+                      ].map((benefit, index) => (
+                        <motion.div
+                          key={index}
+                          initial={{ opacity: 0, y: 20 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: index * 0.2 }}
+                          className="bg-white rounded-xl border border-gray-200 p-8 hover:shadow-lg transition-all duration-200"
+                        >
+                          <div className={`w-12 h-12 rounded-lg bg-${benefit.color}-50 flex items-center justify-center mb-6`}>
+                            <benefit.icon className={`w-6 h-6 text-${benefit.color}-600`} />
+                          </div>
+
+                          <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                            {benefit.title}
+                          </h3>
+
+                          <p className="text-gray-600 mb-6">
+                            {benefit.description}
+                          </p>
+
+                          <ul className="space-y-3">
+                            {benefit.benefits.map((item, bIndex) => (
+                              <li key={bIndex} className="flex items-center text-gray-600">
+                                <Check className={`w-5 h-5 text-${benefit.color}-600 mr-2 flex-shrink-0`} />
+                                <span>{item}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+                </section>
+
+                {/* Enhanced Testimonials Section */}
+                <section className="py-20 bg-notion-hover">
+                  <div className="max-w-7xl mx-auto px-4">
+                    <div className="text-center mb-16">
+                      <h2 className="text-[32px] font-bold tracking-tight mb-4">
+                        Trusted by sales leaders worldwide
+                      </h2>
+                      <p className="text-notion-gray text-[18px] max-w-2xl mx-auto">
+                        Join thousands of teams using Data Forge to supercharge their outreach
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-12 gap-6">
+                      {[
+                        {
+                          quote: "Data Forge transformed our outreach strategy. We've seen a 3x increase in response rates and saved countless hours on manual research.",
+                          author: "Sarah Chen",
+                          title: "Head of Sales",
+                          company: "TechCorp",
+                          size: "col-span-12 md:col-span-8",
+                          color: "bg-daring-indigo"
+                        },
+                        {
+                          quote: "The accuracy of the data is incredible. No more bounced emails or wrong numbers.",
+                          author: "Michael Rodriguez",
+                          title: "SDR Manager",
+                          company: "GrowthAI",
+                          size: "col-span-12 md:col-span-4",
+                          color: "bg-parfait"
+                        },
+                        {
+                          quote: "Easy to use, fantastic support, and great value. A must-have for any B2B sales team.",
+                          author: "Emma Watson",
+                          title: "Revenue Operations",
+                          company: "CloudScale",
+                          size: "col-span-12 md:col-span-4",
+                          color: "bg-puturple"
+                        },
+                        {
+                          quote: "We've cut our prospecting time in half and improved our connection rate by 40%. The ROI is phenomenal.",
+                          author: "David Park",
+                          title: "VP Sales",
+                          company: "SalesPro",
+                          size: "col-span-12 md:col-span-8",
+                          color: "bg-emerald-pool"
+                        }
+                      ].map((testimonial, index) => (
+                        <motion.div 
+                          key={index}
+                          className={`${testimonial.size} group`}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.2 * index, duration: 0.6 }}
+                        >
+                          <div className={`h-full ${testimonial.color} rounded-xl p-8 hover:shadow-xl transition-all duration-200`}>
+                            <div className="flex flex-col h-full">
+                              <div className="flex-grow">
+                                <p className="text-[18px] text-white mb-6 leading-relaxed">
+                                  "{testimonial.quote}"
+                                </p>
+                              </div>
+                              <div className="mt-6 pt-6 border-t border-white/10">
+                                <div className="flex items-center">
+                                  <div className="h-12 w-12 rounded-full bg-white/10 flex items-center justify-center text-white font-medium text-lg">
+                                    {testimonial.author.charAt(0)}
+                                  </div>
+                                  <div className="ml-4">
+                                    <p className="font-medium text-white">{testimonial.author}</p>
+                                    <p className="text-[14px] text-white/80">{testimonial.title}, {testimonial.company}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+                </section>
+
+
+                {/* Final CTA Section */}
+                <section className="py-20 bg-gray-900 text-white">
+                  <div className="max-w-4xl mx-auto px-4 text-center">
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                    >
+                      <div className="inline-flex items-center px-4 py-2 rounded-full bg-emerald-500/20 text-emerald-400 text-sm font-medium mb-8">
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        Get 50 free credits every month
+                      </div>
+
+                      <h2 className="text-4xl font-bold mb-6">
+                        Ready to supercharge your prospecting?
+                      </h2>
+
+                      <p className="text-xl text-gray-300 mb-8">
+                        Join thousands of teams using Data Forge to find and connect with decision-makers
+                      </p>
+
+                      <div className="flex flex-col items-center space-y-6">
+                        <Link href="https://app.dataforge.so">
+                          <a className="inline-flex items-center px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-lg font-medium transition-all duration-200 group">
+                            Start Free
+                            <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                          </a>
+                        </Link>
+
+                        <div className="flex items-center justify-center gap-8 text-sm text-gray-400">
+                          <div className="flex items-center">
+                            <Check className="w-4 h-4 text-emerald-400 mr-2" />
+                            No credit card required
+                          </div>
+                          <div className="flex items-center">
+                            <Check className="w-4 h-4 text-emerald-400 mr-2" />
+                            50 free credits monthly
+                          </div>
+                          <div className="flex items-center">
+                            <Check className="w-4 h-4 text-emerald-400 mr-2" />
+                            98% accuracy 
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  </div>
+                </section>
+              </main>
+
+              <Footer />
             </div>
-          </div>
-        </section>
-
-        {/* CTA Section */}
-        <section className="bg-daring-indigo text-white py-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <motion.h2 className="text-4xl font-bold mb-6" {...fadeIn}>
-              Ready to Enhance Your Contact Data?
-            </motion.h2>
-            <motion.p className="text-xl mb-12" {...fadeIn}>
-              Start improving your outreach effectiveness today.
-            </motion.p>
-            <motion.button 
-              className="bg-emerald-pool text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-opacity-90 transition duration-300 shadow-lg"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              Start Your Free Trial
-            </motion.button>
-            <p className="mt-4 text-sm">No credit card required. 7-day free trial with 100 lookups.</p>
-          </div>
-        </section>
-      </main>
-
-      <Footer />
-    </div>
-  );
-}
+          );
+        }
 ----------------------------------------
 
 File:   pricing.js
@@ -4573,7 +5246,6 @@ File:   Home.module.css
 
 File: tailwind.config.js
 
-// File: tailwind.config.js
 const defaultTheme = require('tailwindcss/defaultTheme')
 
 module.exports = {
@@ -4589,183 +5261,21 @@ module.exports = {
         'puturple': '#B2A7D1',
         'emerald-pool': '#346B6D',
         'napoleon': '#4A4A4A',
+        'notion': {
+          default: '#37352F',
+          gray: '#787774',
+          hover: '#F7F7F7',
+          border: '#E6E6E6',
+        }
       },
       fontFamily: {
         sans: ['Inter', ...defaultTheme.fontFamily.sans],
         display: ['Inter', ...defaultTheme.fontFamily.sans],
-        mono: ['JetBrains Mono', ...defaultTheme.fontFamily.mono],
       },
-      typography: (theme) => ({
-        DEFAULT: {
-          css: {
-            color: theme('colors.gray.700'),
-            maxWidth: '100ch',
-            h1: {
-              fontSize: '2.5rem',
-              marginTop: '2rem',
-              marginBottom: '1rem',
-              lineHeight: '1.2',
-              fontWeight: '700',
-              color: theme('colors.gray.900'),
-              letterSpacing: '-0.025em',
-            },
-            h2: {
-              fontSize: '1.875rem',
-              marginTop: '2.5rem',
-              marginBottom: '1rem',
-              lineHeight: '1.3',
-              fontWeight: '700',
-              color: theme('colors.gray.900'),
-              letterSpacing: '-0.025em',
-            },
-            h3: {
-              fontSize: '1.5rem',
-              marginTop: '2rem',
-              marginBottom: '0.75rem',
-              lineHeight: '1.4',
-              fontWeight: '600',
-              color: theme('colors.gray.900'),
-            },
-            h4: {
-              fontSize: '1.25rem',
-              marginTop: '1.75rem',
-              marginBottom: '0.5rem',
-              lineHeight: '1.5',
-              fontWeight: '600',
-              color: theme('colors.gray.900'),
-            },
-            p: {
-              marginTop: '1.25rem',
-              marginBottom: '1.25rem',
-              lineHeight: '1.75',
-            },
-            'ul > li': {
-              position: 'relative',
-              paddingLeft: '1.75rem',
-              marginTop: '0.5rem',
-              marginBottom: '0.5rem',
-            },
-            'ul > li::before': {
-              content: '""',
-              width: '0.5rem',
-              height: '0.5rem',
-              position: 'absolute',
-              borderRadius: '50%',
-              backgroundColor: theme('colors.emerald-pool'),
-              left: 0,
-              top: '0.6875em',
-            },
-            'ol > li': {
-              position: 'relative',
-              paddingLeft: '1.75rem',
-              marginTop: '0.5rem',
-              marginBottom: '0.5rem',
-            },
-            a: {
-              color: theme('colors.emerald-pool'),
-              textDecoration: 'none',
-              fontWeight: '500',
-              '&:hover': {
-                textDecoration: 'underline',
-                textDecorationThickness: '2px',
-                textUnderlineOffset: '2px',
-              },
-            },
-            blockquote: {
-              fontWeight: '500',
-              fontStyle: 'italic',
-              color: theme('colors.gray.900'),
-              borderLeftWidth: '0.25rem',
-              borderLeftColor: theme('colors.emerald-pool'),
-              quotes: '"\\201C""\\201D""\\2018""\\2019"',
-              marginTop: '2rem',
-              marginBottom: '2rem',
-              paddingLeft: '1.5rem',
-            },
-            'blockquote p:first-of-type::before': {
-              content: 'open-quote',
-            },
-            'blockquote p:last-of-type::after': {
-              content: 'close-quote',
-            },
-            code: {
-              color: theme('colors.emerald-pool'),
-              fontWeight: '500',
-              fontSize: '0.875em',
-              backgroundColor: theme('colors.gray.100'),
-              padding: '0.25rem 0.4rem',
-              borderRadius: '0.25rem',
-              border: '1px solid',
-              borderColor: theme('colors.gray.200'),
-            },
-            'code::before': {
-              content: '""',
-            },
-            'code::after': {
-              content: '""',
-            },
-            pre: {
-              color: theme('colors.gray.200'),
-              backgroundColor: theme('colors.gray.900'),
-              overflowX: 'auto',
-              fontWeight: '400',
-              fontSize: '0.875em',
-              lineHeight: '1.7142857',
-              marginTop: '1.7142857em',
-              marginBottom: '1.7142857em',
-              borderRadius: '0.375rem',
-              paddingTop: '0.8571429em',
-              paddingRight: '1.1428571em',
-              paddingBottom: '0.8571429em',
-              paddingLeft: '1.1428571em',
-            },
-            'pre code': {
-              backgroundColor: 'transparent',
-              borderWidth: '0',
-              borderRadius: '0',
-              padding: '0',
-              fontWeight: '400',
-              color: 'inherit',
-              fontSize: 'inherit',
-              fontFamily: 'inherit',
-              lineHeight: 'inherit',
-            },
-            table: {
-              width: '100%',
-              tableLayout: 'auto',
-              textAlign: 'left',
-              marginTop: '2em',
-              marginBottom: '2em',
-            },
-            thead: {
-              borderBottomWidth: '1px',
-              borderBottomColor: theme('colors.gray.200'),
-            },
-            'thead th': {
-              color: theme('colors.gray.900'),
-              fontWeight: '600',
-              verticalAlign: 'bottom',
-              paddingRight: '1em',
-              paddingBottom: '0.5em',
-              paddingLeft: '1em',
-            },
-            'tbody tr': {
-              borderBottomWidth: '1px',
-              borderBottomColor: theme('colors.gray.200'),
-            },
-            'tbody tr:last-child': {
-              borderBottomWidth: '0',
-            },
-            'tbody td': {
-              verticalAlign: 'top',
-              paddingTop: '0.5em',
-              paddingRight: '1em',
-              paddingBottom: '0.5em',
-              paddingLeft: '1em',
-            },
-          },
-        },
-      }),
+      letterSpacing: {
+        tighter: '-0.02em',
+        tight: '-0.01em',
+      }
     },
   },
   plugins: [
@@ -4774,9 +5284,6 @@ module.exports = {
     require('@tailwindcss/aspect-ratio'),
     require('@tailwindcss/line-clamp'),
   ],
-  future: {
-    hoverOnlyWhenSupported: true,
-  },
 }
 ----------------------------------------
 
@@ -4917,7 +5424,6 @@ module.exports = {
 
 File: tailwind.config.js
 
-// File: tailwind.config.js
 const defaultTheme = require('tailwindcss/defaultTheme')
 
 module.exports = {
@@ -4933,183 +5439,21 @@ module.exports = {
         'puturple': '#B2A7D1',
         'emerald-pool': '#346B6D',
         'napoleon': '#4A4A4A',
+        'notion': {
+          default: '#37352F',
+          gray: '#787774',
+          hover: '#F7F7F7',
+          border: '#E6E6E6',
+        }
       },
       fontFamily: {
         sans: ['Inter', ...defaultTheme.fontFamily.sans],
         display: ['Inter', ...defaultTheme.fontFamily.sans],
-        mono: ['JetBrains Mono', ...defaultTheme.fontFamily.mono],
       },
-      typography: (theme) => ({
-        DEFAULT: {
-          css: {
-            color: theme('colors.gray.700'),
-            maxWidth: '100ch',
-            h1: {
-              fontSize: '2.5rem',
-              marginTop: '2rem',
-              marginBottom: '1rem',
-              lineHeight: '1.2',
-              fontWeight: '700',
-              color: theme('colors.gray.900'),
-              letterSpacing: '-0.025em',
-            },
-            h2: {
-              fontSize: '1.875rem',
-              marginTop: '2.5rem',
-              marginBottom: '1rem',
-              lineHeight: '1.3',
-              fontWeight: '700',
-              color: theme('colors.gray.900'),
-              letterSpacing: '-0.025em',
-            },
-            h3: {
-              fontSize: '1.5rem',
-              marginTop: '2rem',
-              marginBottom: '0.75rem',
-              lineHeight: '1.4',
-              fontWeight: '600',
-              color: theme('colors.gray.900'),
-            },
-            h4: {
-              fontSize: '1.25rem',
-              marginTop: '1.75rem',
-              marginBottom: '0.5rem',
-              lineHeight: '1.5',
-              fontWeight: '600',
-              color: theme('colors.gray.900'),
-            },
-            p: {
-              marginTop: '1.25rem',
-              marginBottom: '1.25rem',
-              lineHeight: '1.75',
-            },
-            'ul > li': {
-              position: 'relative',
-              paddingLeft: '1.75rem',
-              marginTop: '0.5rem',
-              marginBottom: '0.5rem',
-            },
-            'ul > li::before': {
-              content: '""',
-              width: '0.5rem',
-              height: '0.5rem',
-              position: 'absolute',
-              borderRadius: '50%',
-              backgroundColor: theme('colors.emerald-pool'),
-              left: 0,
-              top: '0.6875em',
-            },
-            'ol > li': {
-              position: 'relative',
-              paddingLeft: '1.75rem',
-              marginTop: '0.5rem',
-              marginBottom: '0.5rem',
-            },
-            a: {
-              color: theme('colors.emerald-pool'),
-              textDecoration: 'none',
-              fontWeight: '500',
-              '&:hover': {
-                textDecoration: 'underline',
-                textDecorationThickness: '2px',
-                textUnderlineOffset: '2px',
-              },
-            },
-            blockquote: {
-              fontWeight: '500',
-              fontStyle: 'italic',
-              color: theme('colors.gray.900'),
-              borderLeftWidth: '0.25rem',
-              borderLeftColor: theme('colors.emerald-pool'),
-              quotes: '"\\201C""\\201D""\\2018""\\2019"',
-              marginTop: '2rem',
-              marginBottom: '2rem',
-              paddingLeft: '1.5rem',
-            },
-            'blockquote p:first-of-type::before': {
-              content: 'open-quote',
-            },
-            'blockquote p:last-of-type::after': {
-              content: 'close-quote',
-            },
-            code: {
-              color: theme('colors.emerald-pool'),
-              fontWeight: '500',
-              fontSize: '0.875em',
-              backgroundColor: theme('colors.gray.100'),
-              padding: '0.25rem 0.4rem',
-              borderRadius: '0.25rem',
-              border: '1px solid',
-              borderColor: theme('colors.gray.200'),
-            },
-            'code::before': {
-              content: '""',
-            },
-            'code::after': {
-              content: '""',
-            },
-            pre: {
-              color: theme('colors.gray.200'),
-              backgroundColor: theme('colors.gray.900'),
-              overflowX: 'auto',
-              fontWeight: '400',
-              fontSize: '0.875em',
-              lineHeight: '1.7142857',
-              marginTop: '1.7142857em',
-              marginBottom: '1.7142857em',
-              borderRadius: '0.375rem',
-              paddingTop: '0.8571429em',
-              paddingRight: '1.1428571em',
-              paddingBottom: '0.8571429em',
-              paddingLeft: '1.1428571em',
-            },
-            'pre code': {
-              backgroundColor: 'transparent',
-              borderWidth: '0',
-              borderRadius: '0',
-              padding: '0',
-              fontWeight: '400',
-              color: 'inherit',
-              fontSize: 'inherit',
-              fontFamily: 'inherit',
-              lineHeight: 'inherit',
-            },
-            table: {
-              width: '100%',
-              tableLayout: 'auto',
-              textAlign: 'left',
-              marginTop: '2em',
-              marginBottom: '2em',
-            },
-            thead: {
-              borderBottomWidth: '1px',
-              borderBottomColor: theme('colors.gray.200'),
-            },
-            'thead th': {
-              color: theme('colors.gray.900'),
-              fontWeight: '600',
-              verticalAlign: 'bottom',
-              paddingRight: '1em',
-              paddingBottom: '0.5em',
-              paddingLeft: '1em',
-            },
-            'tbody tr': {
-              borderBottomWidth: '1px',
-              borderBottomColor: theme('colors.gray.200'),
-            },
-            'tbody tr:last-child': {
-              borderBottomWidth: '0',
-            },
-            'tbody td': {
-              verticalAlign: 'top',
-              paddingTop: '0.5em',
-              paddingRight: '1em',
-              paddingBottom: '0.5em',
-              paddingLeft: '1em',
-            },
-          },
-        },
-      }),
+      letterSpacing: {
+        tighter: '-0.02em',
+        tight: '-0.01em',
+      }
     },
   },
   plugins: [
@@ -5118,9 +5462,6 @@ module.exports = {
     require('@tailwindcss/aspect-ratio'),
     require('@tailwindcss/line-clamp'),
   ],
-  future: {
-    hoverOnlyWhenSupported: true,
-  },
 }
 ----------------------------------------
 
