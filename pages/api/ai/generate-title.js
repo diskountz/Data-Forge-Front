@@ -16,13 +16,16 @@ export default async function handler(req, res) {
 
 STRICT RULES:
 1. Maximum 70 characters
-2. Must be a SINGLE phrase - NO COLONS OR SPLITS
+2. ABSOLUTELY NO COLONS (:) allowed in the title.
 3. Must include "${primaryKeyword}" naturally
 4. NO "How to", "Why You Should", or similar generic starts
 5. AVOID words like "Ultimate", "Complete", "Comprehensive"
 6. Must sound natural, like a respected publication wrote it
 7. NO clickbait or listicle style ("X Ways to...", "X Tips for...")
 8. NO questions in the title
+9. Include one power word and one emotion-evoking word.
+10. The title must be a single, unbroken phrase or statement.
+11. Focus on action and benefit to the reader.
 
 GOOD EXAMPLES:
 - "Advanced SEO Strategies That Actually Drive Traffic"

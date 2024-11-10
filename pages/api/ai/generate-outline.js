@@ -39,7 +39,7 @@ Requirements:
 3. Focus on depth and unique insights
 4. Cover advanced/technical aspects
 5. Include sections for case studies or real-world applications
-6. Address common misconceptions
+6. Each main section should solve a specific problem or address a distinct aspect and Address common misconceptions
 7. Provide actionable takeaways
 8. Consider SEO structure and featured snippet opportunities
 
@@ -48,6 +48,13 @@ Format:
 - Use ### for H3 headings
 - No content under headings, just the structure
 - No bullet points or numbering
+
+AVOID:
+- Generic introductions or "In this article" statements
+- Filler sections or redundant information
+- Obvious or basic information
+- Unnecessary background information
+- Fluff or padding content
 
 Provide only the outline structure without any additional text or explanations.`
       }
