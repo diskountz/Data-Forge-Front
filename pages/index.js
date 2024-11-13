@@ -596,86 +596,85 @@ export default function Home() {
                   </div>
                 </section>
 
-                {/* Enhanced Testimonials Section */}
-                <section className="py-20 bg-notion-hover">
-                  <div className="max-w-7xl mx-auto px-4">
-                    <div className="text-center mb-16">
-                      <h2 className="text-[32px] font-bold tracking-tight mb-4">
-                        Trusted by sales leaders worldwide
-                      </h2>
-                      <p className="text-notion-gray text-[18px] max-w-2xl mx-auto">
-                        Join thousands of teams using Data Forge to supercharge their outreach
-                      </p>
-                    </div>
+        {/* Enhanced Testimonials Section */}
+        <section className="py-20 bg-notion-hover">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="text-center mb-16">
+              <h2 className="text-[32px] font-bold tracking-tight mb-4">
+                Trusted by sales leaders worldwide
+              </h2>
+              <p className="text-notion-gray text-[18px] max-w-2xl mx-auto">
+                Join thousands of teams using Data Forge to supercharge their outreach
+              </p>
+            </div>
 
-                    <div className="grid grid-cols-12 gap-6">
-                      {[
-                        {
-                          quote: "Data Forge transformed our outreach strategy. We've seen a 3x increase in response rates and saved countless hours on manual research.",
-                          author: "Sarah Chen",
-                          title: "Head of Sales",
-                          company: "TechCorp",
-                          size: "col-span-12 md:col-span-8",
-                          color: "bg-daring-indigo"
-                        },
-                        {
-                          quote: "The accuracy of the data is incredible. No more bounced emails or wrong numbers.",
-                          author: "Michael Rodriguez",
-                          title: "SDR Manager",
-                          company: "GrowthAI",
-                          size: "col-span-12 md:col-span-4",
-                          color: "bg-parfait"
-                        },
-                        {
-                          quote: "Easy to use, fantastic support, and great value. A must-have for any B2B sales team.",
-                          author: "Emma Watson",
-                          title: "Revenue Operations",
-                          company: "CloudScale",
-                          size: "col-span-12 md:col-span-4",
-                          color: "bg-puturple"
-                        },
-                        {
-                          quote: "We've cut our prospecting time in half and improved our connection rate by 40%. The ROI is phenomenal.",
-                          author: "David Park",
-                          title: "VP Sales",
-                          company: "SalesPro",
-                          size: "col-span-12 md:col-span-8",
-                          color: "bg-emerald-pool"
-                        }
-                      ].map((testimonial, index) => (
-                        <motion.div 
-                          key={index}
-                          className={`${testimonial.size} group`}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.2 * index, duration: 0.6 }}
-                        >
-                          <div className={`h-full ${testimonial.color} rounded-xl p-8 hover:shadow-xl transition-all duration-200`}>
-                            <div className="flex flex-col h-full">
-                              <div className="flex-grow">
-                                <p className="text-[18px] text-white mb-6 leading-relaxed">
-                                  "{testimonial.quote}"
-                                </p>
-                              </div>
-                              <div className="mt-6 pt-6 border-t border-white/10">
-                                <div className="flex items-center">
-                                  <div className="h-12 w-12 rounded-full bg-white/10 flex items-center justify-center text-white font-medium text-lg">
-                                    {testimonial.author.charAt(0)}
-                                  </div>
-                                  <div className="ml-4">
-                                    <p className="font-medium text-white">{testimonial.author}</p>
-                                    <p className="text-[14px] text-white/80">{testimonial.title}, {testimonial.company}</p>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
+            <div className="grid grid-cols-12 gap-6">
+              {[
+                {
+                  quote: 'Data Forge transformed our outreach strategy. We&apos;ve seen a 3x increase in response rates and saved countless hours on manual research.',
+                  author: 'Sarah Chen',
+                  title: 'Head of Sales',
+                  company: 'TechCorp',
+                  size: 'col-span-12 md:col-span-8',
+                  color: 'bg-daring-indigo'
+                },
+                {
+                  quote: 'The accuracy of the data is incredible. No more bounced emails or wrong numbers.',
+                  author: 'Michael Rodriguez',
+                  title: 'SDR Manager',
+                  company: 'GrowthAI',
+                  size: 'col-span-12 md:col-span-4',
+                  color: 'bg-parfait'
+                },
+                {
+                  quote: 'Easy to use, fantastic support, and great value. A must-have for any B2B sales team.',
+                  author: 'Emma Watson',
+                  title: 'Revenue Operations',
+                  company: 'CloudScale',
+                  size: 'col-span-12 md:col-span-4',
+                  color: 'bg-puturple'
+                },
+                {
+                  quote: 'We&apos;ve cut our prospecting time in half and improved our connection rate by 40%. The ROI is phenomenal.',
+                  author: 'David Park',
+                  title: 'VP Sales',
+                  company: 'SalesPro',
+                  size: 'col-span-12 md:col-span-8',
+                  color: 'bg-emerald-pool'
+                }
+              ].map((testimonial, index) => (
+                <motion.div 
+                  key={index}
+                  className={`${testimonial.size} group`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 * index, duration: 0.6 }}
+                >
+                  <div className={`h-full ${testimonial.color} rounded-xl p-8 hover:shadow-xl transition-all duration-200`}>
+                    <div className="flex flex-col h-full">
+                      <div className="flex-grow">
+                        <p className="text-[18px] text-white mb-6 leading-relaxed">
+                          &quot;{testimonial.quote}&quot;
+                        </p>
+                      </div>
+                      <div className="mt-6 pt-6 border-t border-white/10">
+                        <div className="flex items-center">
+                          <div className="h-12 w-12 rounded-full bg-white/10 flex items-center justify-center text-white font-medium text-lg">
+                            {testimonial.author.charAt(0)}
                           </div>
-                        </motion.div>
-                      ))}
+                          <div className="ml-4">
+                            <p className="font-medium text-white">{testimonial.author}</p>
+                            <p className="text-[14px] text-white/80">{testimonial.title}, {testimonial.company}</p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </section>
-
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
 
                 {/* Final CTA Section */}
                 <section className="py-20 bg-gray-900 text-white">
