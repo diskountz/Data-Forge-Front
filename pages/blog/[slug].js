@@ -34,85 +34,112 @@ export async function getStaticPaths() {
 }
 
 export async function getStaticProps({ params }) {
-  try {
-    // Fetch main post with categories included
-    const { data: post, error } = await supabase
-      .from('posts')
-      .select(`
-        *,
-        profiles:author_id(*),
-        posts_categories!inner(
-          category_id,
-          categories(*)
-        )
-      `)
-      .eq('slug', params.slug)
-      .eq('status', 'published')
-      .single()
+ try {
+   const supabase = createClient(
+     process.env.NEXT_PUBLIC_SUPABASE_URL,
+     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+   );
 
-    if (error || !post) {
-      return { notFound: true }
-    }
+   console.log('1. Starting post fetch for slug:', params.slug);
 
-    // Get category IDs from the current post
-    const categoryIds = post.posts_categories.map(pc => pc.category_id)
+   const { data: post, error } = await supabase
+     .from('posts')
+     .select(`
+       *,
+       profiles:author_id(*),
+       posts_categories!inner(
+         category_id,
+         categories(*)
+       )
+     `)
+     .eq('slug', params.slug)
+     .eq('status', 'published')
+     .single();
 
-    // Fetch related posts that share categories with the current post
-    const { data: relatedPosts } = await supabase
-      .from('posts')
-      .select(`
-        id,
-        title,
-        slug,
-        published_at,
-        created_at,
-        excerpt,
-        featured_image,
-        posts_categories!inner(
-          category_id,
-          categories(*)
-        )
-      `)
-      .eq('status', 'published')
-      .neq('id', post.id)
-      .in('posts_categories.category_id', categoryIds)
-      .limit(3)
+   console.log('2. Post fetch result:', { 
+     hasPost: !!post, 
+     hasError: !!error,
+     errorMessage: error?.message 
+   });
 
-    // Format the post data
-    const formattedPost = {
-      ...post,
-      author_name: post.profiles?.full_name || 'Anonymous',
-      author_avatar: post.profiles?.avatar_url || '/default-avatar.png',
-      formatted_date: post.published_at || post.created_at 
-        ? format(parseISO(post.published_at || post.created_at), 'MMMM d, yyyy')
-        : '',
-    }
+   if (error || !post) {
+     console.log('3. No post found or error occurred');
+     return { notFound: true }
+   }
 
-    // Format related posts
-    const formattedRelatedPosts = (relatedPosts || []).map(post => ({
-      ...post,
-      formatted_date: post.published_at || post.created_at 
-        ? format(parseISO(post.published_at || post.created_at), 'MMM d, yyyy')
-        : ''
-    }))
+   // Get category IDs from the current post
+   const categoryIds = post.posts_categories.map(pc => pc.category_id);
 
-    // Clean up the canonical URL
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
-    const canonicalUrl = cleanUrl(`${baseUrl}/blog/${params.slug}`)
+   console.log('4. Fetching related posts');
 
-    return {
-      props: {
-        post: formattedPost,
-        relatedPosts: formattedRelatedPosts,
-        canonicalUrl,
-        siteTitle: process.env.NEXT_PUBLIC_SITE_NAME || 'Your Site Name'
-      },
-      revalidate: 60 * 60,
-    }
-  } catch (error) {
-    console.error('Error fetching post:', error)
-    return { notFound: true }
-  }
+   const { data: relatedPosts, error: relatedError } = await supabase
+     .from('posts')
+     .select(`
+       id,
+       title,
+       slug,
+       published_at,
+       created_at,
+       excerpt,
+       featured_image,
+       posts_categories!inner(
+         category_id,
+         categories(*)
+       )
+     `)
+     .eq('status', 'published')
+     .neq('id', post.id)
+     .in('posts_categories.category_id', categoryIds)
+     .limit(3);
+
+   console.log('5. Related posts fetch result:', {
+     hasRelatedPosts: !!relatedPosts,
+     hasError: !!relatedError
+   });
+
+   // Format the post data
+   const formattedPost = {
+     ...post,
+     author_name: post.profiles?.full_name || 'Anonymous',
+     author_avatar: post.profiles?.avatar_url || '/default-avatar.png',
+     formatted_date: post.published_at || post.created_at 
+       ? format(parseISO(post.published_at || post.created_at), 'MMMM d, yyyy')
+       : '',
+   }
+
+   // Format related posts
+   const formattedRelatedPosts = (relatedPosts || []).map(post => ({
+     ...post,
+     formatted_date: post.published_at || post.created_at 
+       ? format(parseISO(post.published_at || post.created_at), 'MMM d, yyyy')
+       : ''
+   }));
+
+   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+   const canonicalUrl = cleanUrl(`${baseUrl}/blog/${params.slug}`);
+
+   console.log('6. Successfully prepared all data');
+
+   return {
+     props: {
+       post: formattedPost,
+       relatedPosts: formattedRelatedPosts,
+       canonicalUrl,
+       siteTitle: process.env.NEXT_PUBLIC_SITE_NAME || 'Your Site Name'
+     },
+     revalidate: 60 * 60,
+   }
+ } catch (error) {
+   console.error('Error in getStaticProps:', {
+     message: error.message,
+     name: error.name,
+     stack: error.stack
+   });
+   return { 
+     notFound: true,
+     revalidate: 60 // Still revalidate even on error
+   }
+ }
 }
 
 export default function BlogPost({ post, relatedPosts, canonicalUrl, siteTitle }) {
