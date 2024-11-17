@@ -1,14 +1,11 @@
-// File: next.config.js
-
-module.exports = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   reactStrictMode: true,
-}
-
-module.exports = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   images: {
     unoptimized: true,
-  }
+  },
+  // This is important for Cloudflare Pages
+  distDir: 'build',
 }
+
+module.exports = nextConfig
