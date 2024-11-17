@@ -5,5 +5,5 @@ module.exports = {
     unoptimized: true,
   },
   // Add this line to match Cloudflare's expected directory
-  distDir: 'build'
+  distDir: '.vercel/output/static'
 }
