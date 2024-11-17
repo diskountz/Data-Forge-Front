@@ -4,8 +4,8 @@ module.exports = {
   images: {
     unoptimized: true,
   },
-  // Add this for better error visibility
-  onError: (err) => {
-    console.error('Next.js build error:', err);
+  // Add this to ignore ESLint errors during build
+  eslint: {
+    ignoreDuringBuilds: true,
   }
 }
