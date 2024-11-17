@@ -4,6 +4,8 @@ module.exports = {
   images: {
     unoptimized: true,
   },
-  // Add this line to match Cloudflare's expected directory
-  distDir: '.vercel/output/static'
+  // Add this for better error visibility
+  onError: (err) => {
+    console.error('Next.js build error:', err);
+  }
 }

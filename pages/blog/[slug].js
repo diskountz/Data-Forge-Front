@@ -17,11 +17,55 @@ const cleanUrl = (url) => {
   return url.replace(/([^:]\/)\/+/g, '$1')
 }
 
-export async function getServerSideProps({ params }) {
+export async function getStaticPaths() {
+  console.log('Starting getStaticPaths');
   try {
-    console.log('Server Props - Fetching post for slug:', params.slug);
+    const { data: posts, error } = await supabase
+      .from('posts')
+      .select('slug')
+      .eq('status', 'published');
 
-    const { data: post, error } = await supabase
+    console.log('getStaticPaths result:', {
+      postCount: posts?.length,
+      hasError: !!error,
+      errorMessage: error?.message,
+      errorDetails: error?.details
+    });
+
+    if (error) throw error;
+
+    return {
+      paths: posts?.map(({ slug }) => ({
+        params: { slug }
+      })) || [],
+      fallback: true
+    };
+  } catch (error) {
+    console.error('Error in getStaticPaths:', {
+      message: error.message,
+      name: error.name,
+      stack: error.stack
+    });
+    return {
+      paths: [],
+      fallback: true
+    };
+  }
+}
+
+export async function getStaticProps({ params }) {
+  console.log('Starting getStaticProps with params:', params);
+  try {
+    // Log environment variables (redacted for security)
+    console.log('Environment check:', {
+      hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      hasSupabaseKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      siteUrl: process.env.NEXT_PUBLIC_SITE_URL
+    });
+
+    // Main post query
+    console.log('Fetching post data for slug:', params.slug);
+    const { data: post, error: postError } = await supabase
       .from('posts')
       .select(`
         *,
@@ -35,22 +79,25 @@ export async function getServerSideProps({ params }) {
       .eq('status', 'published')
       .single();
 
-    console.log('Server Props - Fetch result:', { 
-      hasPost: !!post, 
-      hasError: !!error,
-      errorDetails: error?.message 
+    console.log('Post query result:', {
+      hasPost: !!post,
+      hasError: !!postError,
+      errorMessage: postError?.message,
+      errorDetails: postError?.details
     });
 
-    if (error || !post) {
-      console.log('Server Props - No post found or error');
-      return { notFound: true }
+    if (postError) throw postError;
+
+    if (!post) {
+      console.log('No post found for slug:', params.slug);
+      return { notFound: true };
     }
 
     // Get category IDs from the current post
     const categoryIds = post.posts_categories.map(pc => pc.category_id);
+    console.log('Fetching related posts for categories:', categoryIds);
 
-    console.log('Fetching related posts');
-
+    // Related posts query
     const { data: relatedPosts, error: relatedError } = await supabase
       .from('posts')
       .select(`
@@ -71,7 +118,19 @@ export async function getServerSideProps({ params }) {
       .in('posts_categories.category_id', categoryIds)
       .limit(3);
 
+    console.log('Related posts query result:', {
+      relatedPostCount: relatedPosts?.length,
+      hasError: !!relatedError,
+      errorMessage: relatedError?.message
+    });
+
+    if (relatedError) {
+      console.warn('Error fetching related posts:', relatedError);
+      // Continue without related posts rather than failing
+    }
+
     // Format the post data
+    console.log('Formatting post data');
     const formattedPost = {
       ...post,
       author_name: post.profiles?.full_name || 'Anonymous',
@@ -92,37 +151,58 @@ export async function getServerSideProps({ params }) {
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
     const canonicalUrl = cleanUrl(`${baseUrl}/blog/${params.slug}`);
 
+    console.log('Successfully prepared data for:', params.slug);
+
     return {
       props: {
         post: formattedPost,
         relatedPosts: formattedRelatedPosts,
         canonicalUrl,
         siteTitle: process.env.NEXT_PUBLIC_SITE_NAME || 'Your Site Name'
-      }
+      },
+      revalidate: 60 // Revalidate every minute
     }
   } catch (error) {
-    console.error('Server Props - Error:', {
+    console.error('Fatal error in getStaticProps:', {
       message: error.message,
       name: error.name,
+      code: error.code,
+      details: error.details,
       stack: error.stack
     });
-    return { notFound: true }
+    throw error; // Let Next.js handle the error
   }
 }
 
 export default function BlogPost({ post, relatedPosts, canonicalUrl, siteTitle }) {
-  const router = useRouter()
+  const router = useRouter();
 
-  if (!post) {
+  // Handle loading state
+  if (router.isFallback) {
     return (
       <MainLayout>
         <div className="flex items-center justify-center min-h-screen">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-pool"></div>
         </div>
       </MainLayout>
-    )
+    );
   }
 
+  // Handle no post case
+  if (!post) {
+    return (
+      <MainLayout>
+        <div className="max-w-4xl mx-auto px-4 py-12">
+          <h1 className="text-2xl font-bold">Post not found</h1>
+          <Link href="/blog">
+            <a className="text-emerald-pool hover:underline">Return to blog</a>
+          </Link>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  // Prepare schema data
   const schemaData = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
@@ -146,7 +226,7 @@ export default function BlogPost({ post, relatedPosts, canonicalUrl, siteTitle }
       "@type": "WebPage",
       "@id": canonicalUrl
     }
-  }
+  };
 
   return (
     <MainLayout>
@@ -238,7 +318,7 @@ export default function BlogPost({ post, relatedPosts, canonicalUrl, siteTitle }
             </div>
 
             {/* Related Posts */}
-            {relatedPosts.length > 0 && (
+            {relatedPosts && relatedPosts.length > 0 && (
               <div className="mt-12 pt-8 border-t">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Related Articles</h2>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -312,5 +392,5 @@ export default function BlogPost({ post, relatedPosts, canonicalUrl, siteTitle }
         </div>
       </article>
     </MainLayout>
-  )
+  );
 }
