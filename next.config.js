@@ -1,14 +1,9 @@
-// File: next.config.js
-
+/** @type {import('next').NextConfig} */
 module.exports = {
   reactStrictMode: true,
-}
-
-module.exports = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   images: {
     unoptimized: true,
-  }
+  },
+  // Add this line to match Cloudflare's expected directory
+  distDir: 'build'
 }
