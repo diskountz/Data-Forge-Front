@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { format, parseISO } from 'date-fns'
 import Link from 'next/link'
 import TableOfContents from '../../components/PostEditor/TableOfContents'
+import SocialShare from '../../components/SocialShare'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -46,9 +47,13 @@ export async function getStaticProps({ params }) {
         : ''
     }
 
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+    const canonicalUrl = `${baseUrl}/blog/${params.slug}`.replace(/([^:]\/)\/+/g, '$1')
+
     return {
       props: {
-        post: formattedPost
+        post: formattedPost,
+        canonicalUrl
       },
       revalidate: 60
     }
@@ -58,7 +63,7 @@ export async function getStaticProps({ params }) {
   }
 }
 
-export default function BlogPost({ post }) {
+export default function BlogPost({ post, canonicalUrl }) {
   useEffect(() => {
     window.onerror = function(msg, url, lineNo, columnNo, error) {
       console.log('Client error:', { msg, url, lineNo, columnNo, error });
@@ -113,6 +118,17 @@ export default function BlogPost({ post }) {
           {/* Sidebar */}
           <aside className="hidden lg:block lg:col-span-4">
             <div className="sticky top-8 space-y-8">
+              {/* Social Share */}
+              <div className="bg-white shadow-sm rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Share
+                </h3>
+                <SocialShare 
+                  url={canonicalUrl}
+                  title={post.title}
+                />
+              </div>
+
               {/* Table of Contents */}
               <div className="bg-white shadow-sm rounded-lg p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
