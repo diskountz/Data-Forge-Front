@@ -135,47 +135,38 @@ export default function BlogPost({ post, canonicalUrl }) {
 
             {/* Free Credits CTA */}
             <div className="mt-12 border-t border-gray-200 pt-12">
-              <div className="bg-gradient-to-r from-emerald-pool to-daring-indigo rounded-xl p-8 shadow-xl relative overflow-hidden">
-                {/* Background Pattern - adds subtle texture */}
-                <div className="absolute inset-0 opacity-10" 
-                  style={{ 
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='1' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='3'/%3E%3Ccircle cx='13' cy='13' r='3'/%3E%3C/g%3E%3C/svg%3E")` 
-                  }} 
-                />
-
-                <div className="relative z-10">
-                  <div className="flex flex-col md:flex-row items-center gap-8">
-                    <div className="flex-1">
-                      <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/10 text-white text-sm font-medium mb-6">
-                        ✨ No credit card required
-                      </div>
-
-                      <h3 className="text-3xl font-bold text-white mb-4">
-                        Transform Your Outreach with Verified Data
-                      </h3>
-
-                      <div className="space-y-3 mb-8 text-white/90">
-                        <div className="flex items-center gap-2">
-                          <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-white">✓</div>
-                          <p>50 free monthly credits</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-white">✓</div>
-                          <p>98% email deliverability rate</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-white">✓</div>
-                          <p>Direct dials & company insights</p>
-                        </div>
-                      </div>
-
-                      <Link 
-                        href="https://app.dataforge.so"
-                        className="inline-flex px-8 py-4 bg-white text-emerald-pool rounded-lg hover:bg-white hover:shadow-lg hover:scale-105 transition-all duration-200 font-semibold text-lg"
-                      >
-                        Get Started Free →
-                      </Link>
+              <div className="bg-gradient-to-r from-emerald-pool to-daring-indigo rounded-xl p-8 shadow-lg relative overflow-hidden">
+                <div className="flex flex-col md:flex-row items-center gap-8">
+                  <div className="flex-1">
+                    <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/10 text-white text-sm font-medium mb-6">
+                      ✨ No credit card required
                     </div>
+
+                    <h3 className="text-3xl font-bold text-white mb-4">
+                      Transform Your Outreach with Verified Data
+                    </h3>
+
+                    <div className="space-y-3 mb-8 text-white/90">
+                      <div className="flex items-center gap-2">
+                        <span className="text-white">✓</span>
+                        <p>50 free monthly credits</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-white">✓</span>
+                        <p>98% email deliverability rate</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-white">✓</span>
+                        <p>Direct dials & company insights</p>
+                      </div>
+                    </div>
+
+                    <Link 
+                      href="https://app.dataforge.so"
+                      className="inline-flex px-8 py-4 bg-white text-emerald-pool rounded-lg hover:bg-white hover:shadow-lg hover:scale-105 transition-all duration-200 font-semibold text-lg"
+                    >
+                      Get Started Free →
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -184,15 +175,12 @@ export default function BlogPost({ post, canonicalUrl }) {
             {/* Testimonial */}
             <div className="mt-12 mb-12">
               <div className="relative">
-                {/* Background card for layered effect */}
                 <div className="absolute -inset-4 bg-emerald-pool/5 rounded-xl transform rotate-1"></div>
                 <div className="absolute -inset-4 bg-emerald-pool/5 rounded-xl transform -rotate-1"></div>
 
-                {/* Main testimonial card */}
                 <div className="relative bg-white rounded-xl p-8 shadow-lg border border-emerald-pool/10">
                   <div className="flex items-center gap-8">
                     <div className="flex-1">
-                      {/* Rating stars */}
                       <div className="flex items-center gap-1 text-emerald-pool mb-6">
                         {'★★★★★'.split('').map((star, i) => (
                           <span key={i} className="text-xl">{star}</span>
@@ -218,6 +206,7 @@ export default function BlogPost({ post, canonicalUrl }) {
                 </div>
               </div>
             </div>
+          </div>
 
           {/* Sidebar */}
           <aside className="hidden lg:block lg:col-span-4">
