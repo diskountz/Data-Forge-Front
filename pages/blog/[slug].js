@@ -5,6 +5,7 @@ import { format, parseISO } from 'date-fns'
 import Link from 'next/link'
 import TableOfContents from '../../components/PostEditor/TableOfContents'
 import SocialShare from '../../components/SocialShare'
+import Image from 'next/image'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -83,6 +84,24 @@ export default function BlogPost({ post, canonicalUrl }) {
 
   return (
     <MainLayout>
+      {/* Featured Image Container - Full Width */}
+      {post.featured_image && (
+        <div className="w-full bg-gray-100 mb-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="relative w-full h-[400px] rounded-lg overflow-hidden">
+              <Image
+                src={post.featured_image}
+                alt={post.title}
+                fill
+                className="object-cover"
+                priority
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="lg:grid lg:grid-cols-12 lg:gap-8">
           {/* Main content */}
@@ -120,7 +139,6 @@ export default function BlogPost({ post, canonicalUrl }) {
             <div className="sticky top-8 space-y-8">
               {/* Social Share */}
               <div className="bg-white shadow-sm rounded-lg p-6">
-                
                 <SocialShare 
                   url={canonicalUrl}
                   title={post.title}
@@ -129,7 +147,9 @@ export default function BlogPost({ post, canonicalUrl }) {
 
               {/* Table of Contents */}
               <div className="bg-white shadow-sm rounded-lg p-6">
-                
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Table of Contents
+                </h3>
                 <TableOfContents content={post.content} />
               </div>
             </div>
