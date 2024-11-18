@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import MainLayout from '../../components/MainLayout'
+import { useEffect } from 'react'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -7,9 +8,10 @@ const supabase = createClient(
 )
 
 export async function getStaticPaths() {
+  console.log('Starting getStaticPaths');
   return {
     paths: [],
-    fallback: 'blocking'
+    fallback: true  // Changed to true from 'blocking'
   }
 }
 
@@ -17,20 +19,20 @@ export async function getStaticProps({ params }) {
   try {
     const { data: post, error } = await supabase
       .from('posts')
-      .select('title, content')
+      .select('title, content, created_at, status')
       .eq('slug', params.slug)
       .single();
 
-    if (error) {
-      console.error('Supabase error:', error);
-      throw error;
+    if (error) throw error;
+
+    if (!post) {
+      return { notFound: true }
     }
 
     return {
-      props: { 
+      props: {
         post,
-        // Add any props your components might need
-        pageTitle: post.title || 'Blog Post'
+        fallback: true
       },
       revalidate: 60
     }
@@ -40,16 +42,38 @@ export async function getStaticProps({ params }) {
   }
 }
 
-// Keep the component super simple for now
-export default function BlogPost({ post, pageTitle }) {
-  if (!post) return null;
+export default function BlogPost({ post }) {
+  useEffect(() => {
+    // Client-side error logging
+    window.onerror = function(msg, url, lineNo, columnNo, error) {
+      console.log('Client error:', { msg, url, lineNo, columnNo, error });
+      return false;
+    };
+  }, []);
+
+  if (!post) {
+    return (
+      <MainLayout>
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <p>Loading...</p>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
-    <div>
+    <MainLayout>
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-4">{post.title}</h1>
-        <div dangerouslySetInnerHTML={{ __html: post.content }} />
+        <article>
+          <h1 className="text-4xl font-bold text-daring-indigo mb-4">
+            {post.title}
+          </h1>
+          <div 
+            className="prose prose-lg max-w-none"
+            dangerouslySetInnerHTML={{ __html: post.content }}
+          />
+        </article>
       </div>
-    </div>
+    </MainLayout>
   );
 }
