@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import SimpleMainLayout from '../../components/SimpleMainLayout'
+import MainLayout from '../../components/MainLayout'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -7,7 +7,6 @@ const supabase = createClient(
 )
 
 export async function getStaticPaths() {
-  console.log('Starting getStaticPaths');
   return {
     paths: [],
     fallback: 'blocking'
@@ -15,8 +14,6 @@ export async function getStaticPaths() {
 }
 
 export async function getStaticProps({ params }) {
-  console.log('Starting getStaticProps:', params);
-
   try {
     const { data: post, error } = await supabase
       .from('posts')
@@ -30,7 +27,11 @@ export async function getStaticProps({ params }) {
     }
 
     return {
-      props: { post },
+      props: { 
+        post,
+        // Add any props your components might need
+        pageTitle: post.title || 'Blog Post'
+      },
       revalidate: 60
     }
   } catch (error) {
@@ -39,13 +40,16 @@ export async function getStaticProps({ params }) {
   }
 }
 
-export default function BlogPost({ post }) {
+// Keep the component super simple for now
+export default function BlogPost({ post, pageTitle }) {
+  if (!post) return null;
+
   return (
-    <SimpleMainLayout>
+    <div>
       <div className="max-w-4xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-4">{post.title}</h1>
         <div dangerouslySetInnerHTML={{ __html: post.content }} />
       </div>
-    </SimpleMainLayout>
+    </div>
   );
 }
