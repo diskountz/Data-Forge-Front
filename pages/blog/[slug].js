@@ -82,7 +82,7 @@ export default function BlogPost({ post, canonicalUrl }) {
     );
   }
 
-return (
+  return (
     <MainLayout>
       {/* Featured Image Container - Full Width */}
       {post.featured_image && (
@@ -133,49 +133,8 @@ return (
               />
             </article>
 
-            {/* Newsletter Section */}
-            <div className="mt-12 border-t border-gray-200 pt-12">
-              <div className="bg-emerald-pool/5 rounded-xl p-8">
-                <div className="flex flex-col md:flex-row items-center gap-6">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
-                      Get data enrichment tips in your inbox
-                    </h3>
-                    <p className="text-gray-600">
-                      Join 3,000+ sales professionals getting weekly insights on connecting with decision makers.
-                    </p>
-                  </div>
-                  <form onSubmit={handleSubscribe} className="flex-1 w-full">
-                    <div className="flex gap-2">
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="Enter your email"
-                        className="flex-1 px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-emerald-pool/20 focus:border-emerald-pool"
-                        required
-                      />
-                      <button 
-                        type="submit"
-                        disabled={isSubscribing}
-                        className="px-6 py-3 bg-emerald-pool text-white rounded-lg hover:bg-emerald-pool/90 transition-colors"
-                      >
-                        {isSubscribing ? 'Subscribing...' : 'Subscribe'}
-                      </button>
-                    </div>
-                    {subscriptionStatus === 'success' && (
-                      <p className="mt-2 text-green-600 text-sm">Thanks for subscribing!</p>
-                    )}
-                    {subscriptionStatus === 'error' && (
-                      <p className="mt-2 text-red-600 text-sm">Something went wrong. Please try again.</p>
-                    )}
-                  </form>
-                </div>
-              </div>
-            </div>
-
             {/* Free Credits CTA */}
-            <div className="mt-12">
+            <div className="mt-12 border-t border-gray-200 pt-12">
               <div className="bg-gradient-to-r from-emerald-pool to-daring-indigo rounded-xl p-8 text-white">
                 <div className="flex flex-col md:flex-row items-center gap-8">
                   <div className="flex-1">
@@ -222,22 +181,6 @@ return (
           {/* Sidebar */}
           <aside className="hidden lg:block lg:col-span-4">
             <div className="sticky top-8 space-y-8">
-              {/* New CTA Card */}
-              <div className="bg-emerald-pool text-white rounded-lg p-6">
-                <h3 className="text-lg font-semibold mb-2">
-                  Ready to scale your outreach?
-                </h3>
-                <p className="text-white/90 mb-4">
-                  Get started with 50 free credits. No credit card required.
-                </p>
-                <Link 
-                  href="https://app.dataforge.so"
-                  className="inline-flex px-4 py-2 bg-white text-emerald-pool rounded-lg hover:bg-white/90 transition-colors text-sm font-medium"
-                >
-                  Start Free
-                </Link>
-              </div>
-
               {/* Social Share */}
               <div className="bg-white shadow-sm rounded-lg p-6">
                 <SocialShare 
