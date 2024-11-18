@@ -120,9 +120,7 @@ export default function BlogPost({ post, canonicalUrl }) {
             <div className="sticky top-8 space-y-8">
               {/* Social Share */}
               <div className="bg-white shadow-sm rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Share with your network
-                </h3>
+                
                 <SocialShare 
                   url={canonicalUrl}
                   title={post.title}
