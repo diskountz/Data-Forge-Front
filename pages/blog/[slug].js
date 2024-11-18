@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import MainLayout from '../../components/MainLayout'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -19,7 +20,7 @@ export async function getStaticProps({ params }) {
   try {
     const { data: post, error } = await supabase
       .from('posts')
-      .select('title, content')  // Only select what we need
+      .select('title, content')
       .eq('slug', params.slug)
       .single();
 
@@ -28,10 +29,14 @@ export async function getStaticProps({ params }) {
       throw error;
     }
 
-    console.log('Post found:', post?.title);
-
     return {
-      props: { post },
+      props: { 
+        post,
+        // Add any props MainLayout might need
+        navigation: {
+          isOpen: false
+        }
+      },
       revalidate: 60
     }
   } catch (error) {
@@ -40,11 +45,13 @@ export async function getStaticProps({ params }) {
   }
 }
 
-export default function BlogPost({ post }) {
+export default function BlogPost({ post, navigation }) {
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
-      <h1 style={{ fontSize: '2em', marginBottom: '20px' }}>{post.title}</h1>
-      <div dangerouslySetInnerHTML={{ __html: post.content }} />
-    </div>
+    <MainLayout navigation={navigation}>
+      <main className="max-w-4xl mx-auto px-4 py-8">
+        <h1 className="text-2xl font-bold mb-4">{post.title}</h1>
+        <div dangerouslySetInnerHTML={{ __html: post.content }} />
+      </main>
+    </MainLayout>
   );
 }
