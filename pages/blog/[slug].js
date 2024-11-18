@@ -121,7 +121,7 @@ export default function BlogPost({ post, canonicalUrl }) {
               {/* Social Share */}
               <div className="bg-white shadow-sm rounded-lg p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Share
+                  Share with your network
                 </h3>
                 <SocialShare 
                   url={canonicalUrl}
@@ -131,9 +131,7 @@ export default function BlogPost({ post, canonicalUrl }) {
 
               {/* Table of Contents */}
               <div className="bg-white shadow-sm rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Table of Contents
-                </h3>
+                
                 <TableOfContents content={post.content} />
               </div>
             </div>
