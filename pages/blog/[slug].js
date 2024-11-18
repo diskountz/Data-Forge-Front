@@ -161,12 +161,18 @@ export default function BlogPost({ post, canonicalUrl }) {
                       </div>
                     </div>
 
-                    <Link 
-                      href="https://app.dataforge.so"
-                      className="inline-flex px-8 py-4 bg-white text-emerald-pool rounded-lg hover:bg-white hover:shadow-lg hover:scale-105 transition-all duration-200 font-semibold text-lg"
+                    <button
+                      onClick={() => window.location.href = 'https://app.dataforge.so'}
+                      className="group relative inline-flex items-center justify-center px-8 py-4 bg-white rounded-lg overflow-hidden transition-all duration-300
+                      hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] hover:scale-105 active:scale-95"
                     >
-                      Get Started Free →
-                    </Link>
+                      <span className="relative z-10 font-bold text-lg bg-gradient-to-r from-emerald-pool to-daring-indigo bg-clip-text text-transparent group-hover:opacity-80">
+                        Get Started Free
+                      </span>
+                      <span className="relative z-10 ml-2 transform transition-transform duration-300 group-hover:translate-x-1">
+                        →
+                      </span>
+                    </button>
                   </div>
                 </div>
               </div>
