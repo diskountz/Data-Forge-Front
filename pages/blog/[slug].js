@@ -5,6 +5,26 @@ import { format, parseISO } from 'date-fns'
 import Link from 'next/link'
 import TableOfContents from '../../components/PostEditor/TableOfContents'
 
+// Calculate reading time function
+function calculateReadTime(content) {
+  if (!content) return 0;
+
+  // Strip HTML tags
+  const text = content.replace(/<[^>]*>/g, '');
+
+  // Average reading speed (words per minute)
+  const wordsPerMinute = 200;
+
+  // Count words (split by spaces and filter empty strings)
+  const words = text.trim().split(/\s+/).filter(word => word.length > 0);
+
+  // Calculate reading time in minutes
+  const readingTime = Math.ceil(words.length / wordsPerMinute);
+
+  // Return at least 1 minute
+  return Math.max(1, readingTime);
+}
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -43,7 +63,8 @@ export async function getStaticProps({ params }) {
       ...post,
       formatted_date: post.published_at || post.created_at 
         ? format(parseISO(post.published_at || post.created_at), 'MMMM d, yyyy')
-        : ''
+        : '',
+      reading_time: calculateReadTime(post.content)
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
@@ -102,7 +123,9 @@ export default function BlogPost({ post, canonicalUrl }) {
             <span className="text-gray-400">•</span>
             <span className="text-gray-500">{post.formatted_date}</span>
             <span className="text-gray-400">•</span>
-            <span className="text-gray-500">5 min read</span>
+            <span className="text-gray-500">
+              {post.reading_time} min read
+            </span>
           </div>
 
           {/* Title */}
