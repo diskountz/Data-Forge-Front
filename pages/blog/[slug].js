@@ -13,7 +13,7 @@ function calculateReadTime(content) {
   const text = content.replace(/<[^>]*>/g, '');
 
   // Average reading speed (words per minute)
-  const wordsPerMinute = 200;
+  const wordsPerMinute = 230;
 
   // Count words (split by spaces and filter empty strings)
   const words = text.trim().split(/\s+/).filter(word => word.length > 0);
