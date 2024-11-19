@@ -129,7 +129,7 @@ export default function BlogPost({ post, canonicalUrl }) {
           </div>
 
           {/* Title */}
-          <h1 className="text-[42px] font-bold text-gray-900 mb-6 leading-tight">
+          <h1 className="text-[50px] font-bold text-gray-900 mb-8 leading-tight">
             {post.title}
           </h1>
 
