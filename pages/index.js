@@ -55,9 +55,10 @@ export default function Home() {
         <script type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org",
-            "@type": "SaaSSolution",
+            "@type": "SoftwareApplication",
             "name": "Data Forge",
-            "description": "B2B contact intelligence platform with 98%  deliverability",
+            "description": "Access 200M+ verified business contacts with direct emails & phones. Find and connect with decision-makers instantly, backed by 98% accuracy.",
+            "applicationCategory": "Business",
             "offers": {
               "@type": "Offer",
               "price": "0",
