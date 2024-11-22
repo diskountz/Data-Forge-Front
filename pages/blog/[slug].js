@@ -3,6 +3,7 @@ import MainLayout from '../../components/MainLayout'
 import { useEffect } from 'react'
 import { format, parseISO } from 'date-fns'
 import Link from 'next/link'
+import ReadingProgressBar from '../../components/ReadingProgressBar/ReadingProgressBar'
 import TableOfContents from '../../components/PostEditor/TableOfContents'
 
 // Calculate reading time function
@@ -103,6 +104,7 @@ export default function BlogPost({ post, canonicalUrl }) {
   if (!post) {
     return (
       <MainLayout>
+        <ReadingProgressBar />
         <div className="max-w-4xl mx-auto px-4 py-8">
           <p>Loading...</p>
         </div>
@@ -112,6 +114,7 @@ export default function BlogPost({ post, canonicalUrl }) {
 
   return (
     <MainLayout>
+      <ReadingProgressBar />
       {/* Header Bar - Full Width */}
       <div className="w-full bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
