@@ -14,7 +14,6 @@ const ReadingProgress = () => {
       const windowHeight = window.innerHeight;
       const scrollPosition = window.scrollY;
 
-      // Calculate how much of the article is scrolled
       if (scrollPosition < contentTop) {
         setReadingProgress(0);
       } else if (scrollPosition > contentTop + contentHeight - windowHeight) {
@@ -34,7 +33,7 @@ const ReadingProgress = () => {
   return (
     <div className="fixed top-0 left-0 w-full z-50 h-1 bg-gray-100">
       <div 
-        className="h-full bg-emerald-pool transition-all duration-200 ease-out"
+        className="h-full bg-daring-indigo transition-all duration-200 ease-out"
         style={{ width: `${readingProgress}%` }}
       />
     </div>
