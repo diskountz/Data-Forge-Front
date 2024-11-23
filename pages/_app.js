@@ -1,15 +1,27 @@
-// File: pages/_app.js
 import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs'
 import { SessionContextProvider } from '@supabase/auth-helpers-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/router'
 import '../styles/globals.css'
-
-// For older versions of Next.js without built-in font support
-// Add this to your _document.js instead:
-// <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
 function MyApp({ Component, pageProps }) {
   const [supabaseClient] = useState(() => createPagesBrowserClient())
+  const router = useRouter()
+
+  useEffect(() => {
+    // Track page views when the route changes
+    const handleRouteChange = (url) => {
+      // Google Analytics
+      window.gtag('config', process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID, {
+        page_path: url,
+      })
+    }
+
+    router.events.on('routeChangeComplete', handleRouteChange)
+    return () => {
+      router.events.off('routeChangeComplete', handleRouteChange)
+    }
+  }, [router.events])
 
   return (
     <SessionContextProvider
