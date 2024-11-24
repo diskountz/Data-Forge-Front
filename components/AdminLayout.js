@@ -3,7 +3,15 @@ import { useSupabaseClient, useSession } from '@supabase/auth-helpers-react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
 import { useEffect } from 'react'
-import { LayoutDashboard, FileText, FolderTree, Wand2, LogOut, Settings } from 'lucide-react'
+import { 
+  LayoutDashboard, 
+  FileText, 
+  FolderTree, 
+  Wand2, 
+  LogOut, 
+  Settings,
+  MessageSquare // Add this import
+} from 'lucide-react'
 
 export default function AdminLayout({ children }) {
   const session = useSession()
@@ -45,6 +53,12 @@ export default function AdminLayout({ children }) {
       label: 'Categories',
       icon: FolderTree,
       matches: (path) => path.startsWith('/admin/categories')
+    },
+    {
+      href: '/admin/contact-submissions',
+      label: 'Contact Submissions',
+      icon: MessageSquare,
+      matches: (path) => path.startsWith('/admin/contact-submissions')
     },
     {
       href: '/admin/settings/content',
